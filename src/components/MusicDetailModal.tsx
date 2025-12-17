@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Heart, Play, Music2, Calendar, Disc3, Languages, Star, Clock } from 'lucide-react'
 import { useLibraryStore } from '@store/libraryStore'
+import { useSpotifyPlaybackStore } from '@/store/spotifyPlaybackStore'
+import { saveTrack, isSavedTrack } from '@/services/spotifyFeatures'
+import { isSpotifyConnected } from '@/services/spotify'
 import type { Media } from '../types'
 
 interface MusicDetailModalProps {
@@ -13,11 +16,31 @@ interface MusicDetailModalProps {
 
 export const MusicDetailModal: React.FC<MusicDetailModalProps> = ({ music, isOpen, onClose, onPlay }) => {
   const { toggleFavorite } = useLibraryStore()
+  const playTrack = useSpotifyPlaybackStore((s) => s.playTrack)
   const [isFavorited, setIsFavorited] = useState(music.isFavorite)
+  const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected())
+  const [isSavedToSpotify, setIsSavedToSpotify] = useState(false)
+  const [savingToSpotify, setSavingToSpotify] = useState(false)
 
   const handleFavorite = () => {
     toggleFavorite(music.id)
     setIsFavorited(!isFavorited)
+  }
+
+  const handleSaveToSpotify = async () => {
+    if (!music.spotifyTrackId) {
+      console.warn('No Spotify track ID available')
+      return
+    }
+    setSavingToSpotify(true)
+    try {
+      const success = await saveTrack(music.spotifyTrackId)
+      if (success) {
+        setIsSavedToSpotify(true)
+      }
+    } finally {
+      setSavingToSpotify(false)
+    }
   }
 
   const formatDuration = (seconds?: number) => {
@@ -36,6 +59,17 @@ export const MusicDetailModal: React.FC<MusicDetailModalProps> = ({ music, isOpe
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, onClose])
+
+  // Check Spotify connection and if track is already saved
+  useEffect(() => {
+    setSpotifyConnected(isSpotifyConnected())
+    if (isOpen && spotifyConnected && music.spotifyTrackId) {
+      ;(async () => {
+        const saved = await isSavedTrack(music.spotifyTrackId!)
+        setIsSavedToSpotify(saved)
+      })()
+    }
+  }, [isOpen, spotifyConnected, music.spotifyTrackId])
 
   return (
     <AnimatePresence>
@@ -123,6 +157,15 @@ export const MusicDetailModal: React.FC<MusicDetailModalProps> = ({ music, isOpe
                         <Play size={18} />
                         Play
                       </button>
+                      {spotifyConnected && music.spotifyTrackId && (
+                        <button
+                          onClick={() => playTrack(music.spotifyTrackId!)}
+                          className="px-6 py-3 rounded-none transition font-semibold flex items-center gap-2 bg-green-600 hover:bg-green-600/80 text-white"
+                        >
+                          <Play size={18} />
+                          Spotify
+                        </button>
+                      )}
                       <button
                         onClick={handleFavorite}
                         className={`px-6 py-3 rounded-none transition font-semibold flex items-center gap-2 ${
@@ -134,6 +177,20 @@ export const MusicDetailModal: React.FC<MusicDetailModalProps> = ({ music, isOpe
                         <Heart size={18} fill={isFavorited ? 'currentColor' : 'none'} />
                         {isFavorited ? 'Favorited' : 'Favorite'}
                       </button>
+                      {spotifyConnected && music.spotifyTrackId && (
+                        <button
+                          onClick={handleSaveToSpotify}
+                          disabled={savingToSpotify || isSavedToSpotify}
+                          className={`px-6 py-3 rounded-none transition font-semibold flex items-center gap-2 ${
+                            isSavedToSpotify
+                              ? 'bg-green-600/20 text-green-400'
+                              : 'bg-surface hover:bg-dark text-light disabled:opacity-50'
+                          }`}
+                        >
+                          {savingToSpotify ? '…' : isSavedToSpotify ? '✓' : '+'}
+                          Save
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

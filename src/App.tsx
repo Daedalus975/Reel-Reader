@@ -15,6 +15,7 @@ import { Movies } from '@pages/Movies'
 import { TVShows } from '@pages/TVShows'
 import { Music } from '@pages/Music'
 import { Books } from '@pages/Books'
+import { SpotifyCallback } from '@pages/SpotifyCallback'
 import { Podcasts } from '@pages/Podcasts'
 import { AdultMovies } from '@pages/AdultMovies'
 import { AdultBooks } from '@pages/AdultBooks'
@@ -86,6 +87,7 @@ function App() {
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/book/:id" element={<Book />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/auth/spotify/callback" element={<SpotifyCallback />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </div>

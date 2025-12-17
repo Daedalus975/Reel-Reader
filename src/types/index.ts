@@ -55,6 +55,7 @@ export interface Media {
   isrc?: string // International Standard Recording Code
   audioFormat?: string // e.g., "mp3", "flac", "aac"
   mood?: string // e.g., "energetic", "calm", "sad"
+  spotifyTrackId?: string // Spotify track ID for direct linking/saving
 }
 
 

@@ -11,3 +11,5 @@ export { MusicVideoPlayer } from './MusicVideoPlayer'
 export { BookReader } from './BookReader'
 export { MusicDetailModal } from './MusicDetailModal'
 export { BulkUpdateModal } from './BulkUpdateModal'
+
+export { SpotifySearch } from './SpotifySearch'

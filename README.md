@@ -56,6 +56,12 @@ Built with a custom dark color palette:
 
 ## 🚀 Getting Started
 
+### Handoff / Env Setup
+- Copy `.env.example` to `.env.local` and fill in your own keys (TMDB, OMDb, Last.fm, YouTube Data; optional Spotify, FANZA/DLsite/R18, CORS proxy). Do not ship your secrets in the binary.
+- Spotify: use Web API with Authorization Code + PKCE. Register redirect `http://127.0.0.1:5173/auth/spotify/callback` (or your prod URL), and put the matching value in `VITE_SPOTIFY_REDIRECT_URI`.
+- Desktop builds (Tauri/Electron): keep keys external (config file or first-run input). If you need to protect secrets, use a tiny backend/proxy and keep secrets server-side.
+- Restart `npm run dev` after adding env values so Vite picks them up.
+
 ### Prerequisites
 - Node.js 18+ and npm/yarn
 - Tauri CLI (for desktop building)

@@ -12,7 +12,7 @@ export const MusicVideoPlaylistBuilder: React.FC<MusicVideoPlaylistBuilderProps>
   const setQueue = useMusicVideoPlaylistStore((state) => state.setQueue)
   const clearPlaylist = useMusicVideoPlaylistStore((state) => state.clear)
 
-  const selectable = useMemo(() => items.filter((m) => m.type === 'music' && !m.isAdult), [items])
+  const selectable = useMemo(() => items.filter((m) => m.type === 'music' && !m.isAdult && m.trailerUrl), [items])
 
   const toggle = (id: string) => {
     setSelection((prev) => {
