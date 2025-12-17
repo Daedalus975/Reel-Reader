@@ -21,7 +21,6 @@ function getYouTubeId(url?: string) {
   return match ? match[1] : null
 }
 
-
 export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, viewMode }) => {
   const navigate = useNavigate()
   const toggleFavorite = useLibraryStore((s) => s.toggleFavorite)
@@ -107,6 +106,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, view
       case 'movie':
       case 'tv':
       case 'jav':
+      case 'doujinshi':
+      case 'adult':
       default:
         return 'aspect-[2/3]'
     }
