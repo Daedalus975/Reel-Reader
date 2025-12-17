@@ -1,0 +1,140 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img [ref=e8]
+        - link "REEL READER" [ref=e9] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e11]:
+        - textbox "Search media..." [ref=e12]
+        - img [ref=e13]
+      - generic [ref=e16]:
+        - button [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+        - link [ref=e22] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e23]
+        - link [ref=e26] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e27]
+  - complementary [ref=e30]:
+    - navigation [ref=e31]:
+      - generic [ref=e32]:
+        - link "Home" [ref=e33] [cursor=pointer]:
+          - /url: /
+          - img [ref=e34]
+          - generic [ref=e37]: Home
+        - link "Movies" [ref=e38] [cursor=pointer]:
+          - /url: /movies
+          - img [ref=e39]
+          - generic [ref=e41]: Movies
+        - link "TV Shows" [ref=e42] [cursor=pointer]:
+          - /url: /tv
+          - img [ref=e43]
+          - generic [ref=e48]: TV Shows
+        - link "Music" [ref=e49] [cursor=pointer]:
+          - /url: /music
+          - img [ref=e50]
+          - generic [ref=e54]: Music
+        - link "Books" [ref=e55] [cursor=pointer]:
+          - /url: /books
+          - img [ref=e56]
+          - generic [ref=e59]: Books
+        - link "Podcasts" [ref=e60] [cursor=pointer]:
+          - /url: /podcasts
+          - img [ref=e61]
+          - generic [ref=e67]: Podcasts
+        - link "Search" [ref=e68] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e69]
+          - generic [ref=e72]: Search
+        - link "Import" [ref=e73] [cursor=pointer]:
+          - /url: /import
+          - img [ref=e74]
+          - generic [ref=e77]: Import
+      - generic [ref=e78]:
+        - link "Profiles" [ref=e79] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e80]
+          - generic [ref=e83]: Profiles
+        - link "Account" [ref=e84] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e85]
+          - generic [ref=e90]: Account
+        - link "Settings" [ref=e91] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e92]
+          - generic [ref=e95]: Settings
+  - main [ref=e96]:
+    - generic [ref=e98]:
+      - heading "My Library" [level=1] [ref=e99]
+      - paragraph [ref=e100]: 4 items
+    - generic [ref=e101]:
+      - generic [ref=e102]:
+        - button "All" [ref=e103] [cursor=pointer]
+        - button "Movies" [ref=e104] [cursor=pointer]
+        - button "TV Shows" [ref=e105] [cursor=pointer]
+        - button "Books" [ref=e106] [cursor=pointer]
+        - button "Music" [ref=e107] [cursor=pointer]
+        - button "Podcasts" [ref=e108] [cursor=pointer]
+      - generic [ref=e109]:
+        - generic [ref=e110]:
+          - generic [ref=e111]: Genre
+          - combobox "Genre" [ref=e112]:
+            - option "Any" [selected]
+            - option "Comedy"
+            - option "Drama"
+            - option "Romance"
+            - option "Sci-Fi"
+        - generic [ref=e113] [cursor=pointer]:
+          - checkbox "Favorites only" [ref=e114]
+          - text: Favorites only
+        - generic [ref=e115] [cursor=pointer]:
+          - checkbox "Hide adult content" [ref=e116]
+          - text: Hide adult content
+    - generic [ref=e117]:
+      - generic [ref=e119] [cursor=pointer]:
+        - generic [ref=e120]:
+          - img "Piku" [ref=e121]
+          - img [ref=e123]
+          - generic [ref=e126]: ⭐ 8.5
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - heading "Piku" [level=3] [ref=e129]
+            - paragraph [ref=e130]: 2015 • Comedy
+          - generic [ref=e132]: EN
+      - generic [ref=e134] [cursor=pointer]:
+        - generic [ref=e135]:
+          - img "Tamasha" [ref=e136]
+          - img [ref=e138]
+          - generic [ref=e141]: ⭐ 7.2
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - heading "Tamasha" [level=3] [ref=e144]
+            - paragraph [ref=e145]: 2015 • Drama
+          - generic [ref=e147]: EN
+      - generic [ref=e149] [cursor=pointer]:
+        - generic [ref=e150]:
+          - img "The Expanse" [ref=e151]
+          - img [ref=e153]
+          - generic [ref=e156]: ⭐ 8.4
+        - generic [ref=e157]:
+          - generic [ref=e158]:
+            - heading "The Expanse" [level=3] [ref=e159]
+            - paragraph [ref=e160]: 2015 • Sci-Fi
+          - generic [ref=e162]: EN
+      - generic [ref=e164] [cursor=pointer]:
+        - generic [ref=e165]:
+          - img "Project Hail Mary" [ref=e166]
+          - img [ref=e168]
+          - generic [ref=e171]: ⭐ 4.6
+        - generic [ref=e172]:
+          - generic [ref=e173]:
+            - heading "Project Hail Mary" [level=3] [ref=e174]
+            - paragraph [ref=e175]: 2021 • Sci-Fi
+          - generic [ref=e177]: EN
+```

@@ -1,0 +1,100 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img [ref=e8]
+        - link "REEL READER" [ref=e9] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e11]:
+        - textbox "Search media..." [ref=e12]
+        - img [ref=e13]
+      - generic [ref=e16]:
+        - button [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+        - link [ref=e22] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e23]
+        - link [ref=e26] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e27]
+  - complementary [ref=e30]:
+    - navigation [ref=e31]:
+      - generic [ref=e32]:
+        - link "Home" [ref=e33] [cursor=pointer]:
+          - /url: /
+          - img [ref=e34]
+          - generic [ref=e37]: Home
+        - link "Movies" [ref=e38] [cursor=pointer]:
+          - /url: /movies
+          - img [ref=e39]
+          - generic [ref=e41]: Movies
+        - link "TV Shows" [ref=e42] [cursor=pointer]:
+          - /url: /tv
+          - img [ref=e43]
+          - generic [ref=e48]: TV Shows
+        - link "Music" [ref=e49] [cursor=pointer]:
+          - /url: /music
+          - img [ref=e50]
+          - generic [ref=e54]: Music
+        - link "Books" [ref=e55] [cursor=pointer]:
+          - /url: /books
+          - img [ref=e56]
+          - generic [ref=e59]: Books
+        - link "Podcasts" [ref=e60] [cursor=pointer]:
+          - /url: /podcasts
+          - img [ref=e61]
+          - generic [ref=e67]: Podcasts
+        - link "Search" [ref=e68] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e69]
+          - generic [ref=e72]: Search
+        - link "Import" [ref=e73] [cursor=pointer]:
+          - /url: /import
+          - img [ref=e74]
+          - generic [ref=e77]: Import
+      - generic [ref=e78]:
+        - link "Profiles" [ref=e79] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e80]
+          - generic [ref=e83]: Profiles
+        - link "Account" [ref=e84] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e85]
+          - generic [ref=e90]: Account
+        - link "Settings" [ref=e91] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e92]
+          - generic [ref=e95]: Settings
+  - generic [ref=e97]:
+    - heading "Profiles" [level=1] [ref=e98]
+    - generic [ref=e99]:
+      - heading "Current Profile" [level=2] [ref=e100]
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - paragraph [ref=e103]: To Delete
+          - paragraph [ref=e104]: "ID: 1765968553474"
+        - generic [ref=e106]: 👤
+    - generic [ref=e107]:
+      - heading "Your Profiles" [level=2] [ref=e108]
+      - generic [ref=e109]:
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e114]: 👤
+            - generic [ref=e115]:
+              - paragraph [ref=e116]: Default
+              - paragraph [ref=e117]: Default Profile
+          - button "Switch" [ref=e119] [cursor=pointer]
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - generic [ref=e124]: 👤
+            - paragraph [ref=e126]: To Delete
+          - button "Delete" [ref=e128] [cursor=pointer]
+    - generic [ref=e129]:
+      - heading "Add New Profile" [level=2] [ref=e130]
+      - button "+ Create New Profile" [ref=e131] [cursor=pointer]
+    - paragraph [ref=e133]: 💡 Each profile has its own library, favorites, and watch history. Switch profiles anytime to see different media collections.
+```
