@@ -1,18 +1,20 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Search, Bell, Settings, User, ArrowLeft } from 'lucide-react'
 import { useUIStore } from '@store/index'
 
 export const HeaderBar: React.FC = () => {
-  const { toggleSidebar, currentPage } = useUIStore()
+  const { toggleSidebar } = useUIStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const canGoBack = location.pathname !== '/'
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-dark border-b border-surface h-16 z-40">
       <div className="h-full px-4 flex items-center justify-between">
         {/* Left Side - Logo and Menu Toggle */}
         <div className="flex items-center gap-2 md:gap-4">
-          {currentPage !== '/' && (
+          {canGoBack && (
             <button
               onClick={() => navigate(-1)}
               className="p-2 hover:bg-surface rounded-none transition"

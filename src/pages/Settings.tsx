@@ -1,6 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { useUIStore } from '@store/index'
+import { BulkUpdateModal } from '@components/index'
 
 export const Settings: React.FC = () => {
+  const edgeOpenEnabled = useUIStore((s) => s.sidebarEdgeOpenEnabled)
+  const setEdgeOpenEnabled = useUIStore((s) => s.setSidebarEdgeOpenEnabled)
+  const [showBulkUpdate, setShowBulkUpdate] = useState(false)
 
   return (
     <main className="pt-24 pb-20 px-4 md:px-6 lg:px-8">
@@ -25,6 +30,32 @@ export const Settings: React.FC = () => {
               <option>List</option>
             </select>
           </div>
+          <div className="h-px bg-dark" />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-light font-medium">Auto-open sidebar on edge hover</p>
+              <p className="text-sm text-gray-400">Open menu when cursor hits the left edge (desktop).</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={edgeOpenEnabled}
+              onChange={(e) => setEdgeOpenEnabled(e.target.checked)}
+              className="accent-primary h-4 w-4"
+            />
+          </div>
+          <div className="h-px bg-dark" />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-light font-medium">Bulk metadata update</p>
+              <p className="text-sm text-gray-400">Run global merge updates with progress tracking.</p>
+            </div>
+            <button
+              onClick={() => setShowBulkUpdate(true)}
+              className="px-4 py-2 bg-primary text-white rounded-none hover:bg-primary/80 text-sm"
+            >
+              Open
+            </button>
+          </div>
         </div>
       </section>
 
@@ -42,6 +73,8 @@ export const Settings: React.FC = () => {
           </p>
         </div>
       </section>
+
+      <BulkUpdateModal isOpen={showBulkUpdate} onClose={() => setShowBulkUpdate(false)} />
     </main>
   )
 }

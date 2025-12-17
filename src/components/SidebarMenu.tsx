@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Film, Music, BookOpen, Clapperboard, Radio, Home, Settings, Users, Search, Upload, User, ShieldAlert } from 'lucide-react'
@@ -38,16 +38,76 @@ const BOTTOM_NAV: NavItem[] = [
 ]
 
 export const SidebarMenu: React.FC = () => {
-  const { sidebarOpen, setSidebarOpen } = useUIStore()
+  const { sidebarOpen, setSidebarOpen, sidebarEdgeOpenEnabled } = useUIStore()
   const location = useLocation()
   const currentProfileId = useProfileStore((s) => s.currentProfileId)
   const profiles = useProfileStore((s) => s.profiles)
   const currentProfile = profiles.find((p) => p.id === currentProfileId)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const edgeOpenTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const isActive = (path: string) => location.pathname === path
 
+  // Auto-minimize on mouse leave (with delay to prevent accidental closes)
+  useEffect(() => {
+    const handleMouseLeave = () => {
+      if (sidebarOpen) {
+        hoverTimeoutRef.current = setTimeout(() => {
+          setSidebarOpen(false)
+        }, 300)
+      }
+    }
+
+    const handleMouseEnter = () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+    }
+
+    const sidebar = sidebarRef.current
+    if (sidebar) {
+      sidebar.addEventListener('mouseenter', handleMouseEnter)
+      sidebar.addEventListener('mouseleave', handleMouseLeave)
+    }
+
+    return () => {
+      if (sidebar) {
+        sidebar.removeEventListener('mouseenter', handleMouseEnter)
+        sidebar.removeEventListener('mouseleave', handleMouseLeave)
+      }
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      if (edgeOpenTimeoutRef.current) {
+        clearTimeout(edgeOpenTimeoutRef.current)
+      }
+    }
+  }, [sidebarOpen, setSidebarOpen])
+
+  const handleEdgeEnter = () => {
+    if (!sidebarEdgeOpenEnabled || sidebarOpen) return
+    setSidebarOpen(true)
+  }
+
+  const handleEdgeLeave = () => {
+    if (edgeOpenTimeoutRef.current) {
+      clearTimeout(edgeOpenTimeoutRef.current)
+      edgeOpenTimeoutRef.current = null
+    }
+  }
+
   return (
     <>
+      {/* Edge hover trigger for auto-open (desktop only) */}
+      <div
+        className="fixed left-0 top-16 bottom-0 w-8 z-30 hidden md:block hover:bg-primary/10 transition-colors"
+        onMouseEnter={handleEdgeEnter}
+        onMouseLeave={handleEdgeLeave}
+        title="Hover to open menu"
+      />
+
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <motion.div
@@ -61,6 +121,7 @@ export const SidebarMenu: React.FC = () => {
 
       {/* Sidebar */}
       <motion.aside
+        ref={sidebarRef}
         initial={{ x: -280 }}
         animate={{ x: sidebarOpen ? 0 : -280 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}

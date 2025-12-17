@@ -97,8 +97,11 @@ export const Home: React.FC = () => {
       {/* Headliner: Top recommended movie */}
       <section className="relative h-96 md:h-[500px] lg:h-[600px] overflow-hidden -mt-16 mb-12">
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('${headliner.backdrop || headliner.poster || ''}')` }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('${(headliner.backdrop || headliner.poster || '').replace('/w500/', '/original/')}')`,
+            imageRendering: 'crisp-edges',
+          }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-dark via-dark/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-dark to-transparent" />
@@ -153,7 +156,20 @@ export const Home: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+                className={(() => {
+                  const size = useUIStore.getState().mediaCardSize || 'md'
+                  switch (size) {
+                    case 'xs':
+                      return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'
+                    case 'sm':
+                      return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3'
+                    case 'md':
+                      return 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+                    case 'lg':
+                    default:
+                      return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                  }
+                })()}
               >
                 {section.data.map((item, idx) => (
                   <motion.div

@@ -429,7 +429,20 @@ export const Search: React.FC = () => {
             {results.length} result{results.length !== 1 ? 's' : ''}
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className={(() => {
+            const size = useUIStore.getState().mediaCardSize || 'md'
+            switch (size) {
+              case 'xs':
+                return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'
+              case 'sm':
+                return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'
+              case 'md':
+                return 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'
+              case 'lg':
+              default:
+                return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4'
+            }
+          })()}>
             {results.map((item) => (
               <MediaCard key={item.id} media={item} />
             ))}

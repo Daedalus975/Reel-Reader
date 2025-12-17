@@ -35,7 +35,7 @@ export interface Media {
   
   // Preview/Trailer links
   trailerUrl?: string // YouTube trailer for movies/TV, music video for music
-  previewUrl?: string // Google Books preview, sample clip, etc.
+  previewUrl?: string // Google Books preview, audio sample clip, etc.
   
   // Extracted metadata
   duration?: number // seconds (video/audio)
@@ -44,7 +44,19 @@ export interface Media {
   resolution?: string // e.g., "1920x1080"
   bitrate?: number // audio bitrate kbps
   isbn?: string // books
+  
+  // Music-specific metadata
+  artist?: string // main artist/performer
+  album?: string // album name
+  albumArtist?: string // album artist (may differ from track artist)
+  trackNumber?: number // track position in album
+  playCount?: number // number of times played
+  bpm?: number // tempo in beats per minute
+  isrc?: string // International Standard Recording Code
+  audioFormat?: string // e.g., "mp3", "flac", "aac"
+  mood?: string // e.g., "energetic", "calm", "sad"
 }
+
 
 export interface User {
   id: string
@@ -88,4 +100,7 @@ export interface UIState {
   darkMode: boolean
   selectedMediaId?: string
   currentPage: string
+  sidebarEdgeOpenEnabled: boolean
+  mediaViewMode?: 'grid' | 'list'
+  mediaCardSize?: 'xs' | 'sm' | 'md' | 'lg'
 }

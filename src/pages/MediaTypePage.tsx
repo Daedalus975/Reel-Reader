@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { MediaCard, Button, AddContentModal } from '@components/index'
 import { useLibraryStore, useUIStore } from '@store/index'
+import { Grid, List } from 'lucide-react'
 import type { Media, MediaType } from '../types'
 import { Plus } from 'lucide-react'
 
@@ -14,7 +15,7 @@ interface MediaTypePageProps {
 
 export const MediaTypePage: React.FC<MediaTypePageProps> = ({ type, title, pagePath, onItemClick }) => {
   const { media, setFilters, applyFilters } = useLibraryStore()
-  const { setCurrentPage } = useUIStore()
+  const { setCurrentPage, mediaViewMode = 'grid', mediaCardSize = 'md', setMediaViewMode, setMediaCardSize } = useUIStore()
   const [selectedGenre, setSelectedGenre] = useState<string>('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -99,6 +100,39 @@ export const MediaTypePage: React.FC<MediaTypePageProps> = ({ type, title, pageP
             />
             Favorites only
           </label>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-sm text-gray-300">View</span>
+            <button
+              onClick={() => setMediaViewMode('grid')}
+              className={`p-2 rounded-none border ${mediaViewMode === 'grid' ? 'border-primary text-primary' : 'border-dark text-gray-300 hover:border-primary/60'}`}
+              aria-label="Grid view"
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              onClick={() => setMediaViewMode('list')}
+              className={`p-2 rounded-none border ${mediaViewMode === 'list' ? 'border-primary text-primary' : 'border-dark text-gray-300 hover:border-primary/60'}`}
+              aria-label="List view"
+            >
+              <List size={16} />
+            </button>
+
+            <label className="text-sm text-gray-300 ml-3" htmlFor="card-size-select">
+              Size
+            </label>
+            <select
+              id="card-size-select"
+              value={mediaCardSize}
+              onChange={(e) => setMediaCardSize(e.target.value as 'xs' | 'sm' | 'md' | 'lg')}
+              className="bg-dark text-light px-2 py-1 text-sm rounded-none border border-surface focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="xs">XS</option>
+              <option value="sm">Small</option>
+              <option value="md">Medium</option>
+              <option value="lg">Large</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -106,7 +140,19 @@ export const MediaTypePage: React.FC<MediaTypePageProps> = ({ type, title, pageP
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+        className={
+          mediaViewMode === 'grid'
+            ? (
+                mediaCardSize === 'xs'
+                  ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2'
+                  : mediaCardSize === 'sm'
+                  ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3'
+                  : mediaCardSize === 'md'
+                  ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+                  : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+              )
+            : 'flex flex-col gap-3'
+        }
       >
         {displayMedia.map((item, idx) => (
           <motion.div
@@ -114,9 +160,12 @@ export const MediaTypePage: React.FC<MediaTypePageProps> = ({ type, title, pageP
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.02 }}
+            className={mediaViewMode === 'list' ? 'w-full' : ''}
           >
             <MediaCard
               media={item}
+              size={mediaCardSize}
+              viewMode={mediaViewMode}
               onClick={onItemClick ? () => onItemClick(item, displayMedia) : undefined}
             />
           </motion.div>

@@ -21,12 +21,14 @@ import { AdultBooks } from '@pages/AdultBooks'
 import { useProfileStore } from '@store/profileStore'
 import { useProfileMediaStore } from '@store/profileMediaStore'
 import { useLibraryStore } from '@store/libraryStore'
+import { useUIStore } from '@store/index'
 import './index.css'
 
 function App() {
   const currentProfileId = useProfileStore((state) => state.currentProfileId)
   const mediaByProfile = useProfileMediaStore((state) => state.mediaByProfile)
   const setMedia = useLibraryStore((state) => state.setMedia)
+  const sidebarOpen = useUIStore((state) => state.sidebarOpen)
 
   // Sync library store when profile changes
   useEffect(() => {
@@ -60,26 +62,33 @@ function App() {
       <div className="bg-dark min-h-screen text-light">
         <HeaderBar />
         <SidebarMenu />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/movies" element={<Movies />} />
-          <Route path="/tv" element={<TVShows />} />
-          <Route path="/music" element={<Music />} />
-          <Route path="/books" element={<Books />} />
-          <Route path="/podcasts" element={<Podcasts />} />
-          <Route path="/adult/movies" element={<AdultMovies />} />
-          <Route path="/adult/books" element={<AdultBooks />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/import" element={<Import />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/detail/:id" element={<Detail />} />
-          <Route path="/watch/:id" element={<Watch />} />
-          <Route path="/book/:id" element={<Book />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Home />} />
-        </Routes>
+        <div
+          className="transition-all duration-300 ease-in-out"
+          style={{
+            marginLeft: sidebarOpen ? '288px' : '0',
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/movies" element={<Movies />} />
+            <Route path="/tv" element={<TVShows />} />
+            <Route path="/music" element={<Music />} />
+            <Route path="/books" element={<Books />} />
+            <Route path="/podcasts" element={<Podcasts />} />
+            <Route path="/adult/movies" element={<AdultMovies />} />
+            <Route path="/adult/books" element={<AdultBooks />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/import" element={<Import />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/detail/:id" element={<Detail />} />
+            <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/book/:id" element={<Book />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </div>
         <MusicPlayerBar />
       </div>
     </Router>
