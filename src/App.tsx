@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { HeaderBar, SidebarMenu, MusicPlayerBar } from '@components/index'
+import { HeaderBar, SidebarMenu, MusicPlayerBar, FoldoutPlayer } from '@components/index'
 import { Home } from '@pages/Home'
 import { Library } from '@pages/Library'
 import { Settings } from '@pages/Settings'
@@ -92,6 +92,7 @@ function App() {
           </Routes>
         </div>
         <MusicPlayerBar />
+        <FoldoutPlayer />
       </div>
     </Router>
   )

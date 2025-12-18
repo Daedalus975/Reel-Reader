@@ -12,6 +12,8 @@ Use this as the **inventory and status** source. Visual tokens and voice are def
 | SidebarMenu | Navigation links and sections | Implemented at [src/components/SidebarMenu.tsx](src/components/SidebarMenu.tsx) |
 | HeaderBar | Top bar with search and nav | Implemented at [src/components/HeaderBar.tsx](src/components/HeaderBar.tsx) |
 | WatchlistPanel | View/edit saved content | Planned — not yet implemented |
+| MiniPlayer | Minimizable, draggable queue with drag/drop reordering and remove; minimizes to corner | Implemented at `src/components/MiniPlayer.tsx` |
+| MusicPlayerBar | Persistent playback bar (play/pause/next/prev) and current track info | Implemented at `src/components/MusicPlayerBar.tsx` and wired on the Music page (`src/pages/Music.tsx`) |
 
 Design conventions
 - Square corners (`rounded-none`), flat surfaces

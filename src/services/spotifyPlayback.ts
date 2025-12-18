@@ -1,6 +1,5 @@
 // Spotify Web Playback SDK integration
 
-import { transferPlaybackToDevice } from './spotifyDeviceControl'
 import { getStoredToken, refreshSpotifyToken } from './spotify'
 
 declare global {
@@ -257,14 +256,74 @@ export async function seek(ms: number): Promise<void> {
 }
 
 export async function setVolume(volume: number): Promise<void> {
-  if (!player) throw new Error('Spotify player not initialized')
-  // Volume is 0.0 to 1.0
-  await player.setVolume(Math.max(0, Math.min(1, volume)))
+  // Support both SDK player and Web API device volume
+  const percent = Math.round(Math.max(0, Math.min(1, volume)) * 100)
+  try {
+    const token = await getFreshToken()
+    // Use Web API to set device volume (works for any active device)
+    await fetch(`https://api.spotify.com/v1/me/player/volume?volume_percent=${percent}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (err) {
+    console.error('Failed to set volume via Web API, falling back to SDK setVolume', err)
+    if (!player) throw new Error('Spotify player not initialized')
+    await player.setVolume(Math.max(0, Math.min(1, volume)))
+  }
 }
 
 export async function getCurrentState() {
   if (!player) return null
   return await player.getCurrentState()
+}
+
+export async function getAvailableDevices(): Promise<any[]> {
+  const token = await getFreshToken()
+  const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('Failed to fetch devices')
+  const data = await res.json()
+  return data.devices || []
+}
+
+export async function transferPlaybackToDevice(deviceId: string, play = false): Promise<void> {
+  const token = await getFreshToken()
+  const res = await fetch('https://api.spotify.com/v1/me/player', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_ids: [deviceId], play }),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`Failed to transfer playback: ${res.status} ${text}`)
+  }
+}
+
+export async function setShuffle(state: boolean): Promise<void> {
+  const token = await getFreshToken()
+  const res = await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${state}` , {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to set shuffle')
+  }
+}
+
+export async function setRepeat(mode: 'off' | 'track' | 'context'): Promise<void> {
+  const token = await getFreshToken()
+  const res = await fetch(`https://api.spotify.com/v1/me/player/repeat?state=${mode}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    throw new Error('Failed to set repeat')
+  }
+}
+
+export function getDeviceId(): string | null {
+  return playerDeviceId
 }
 
 export function disconnectPlayer(): void {

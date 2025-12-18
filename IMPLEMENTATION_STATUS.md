@@ -33,6 +33,13 @@
 - ✅ Added manual path input field
 - ✅ Added trailer/preview URL fields in edit mode
 
+### Integrations
+- ✅ Spotify integration: Authorization Code + PKCE implemented, Web Playback SDK initializes a browser device and playback is controlled via the Spotify Web API (`/v1/me/player/play`, `/pause`, etc.). PKCE verifier persistence and token refresh are handled.
+- ✅ Playlist expansion and per-track playback implemented (`src/pages/Music.tsx`).
+- 📌 Optional features catalog imported to `OPTIONAL_FEATURES.md` (1–200). A review and curation pass has been completed — the catalog has been pruned to remove duplicates and out-of-scope items, and a **Top 10 priority** list was added (see `OPTIONAL_FEATURES.md`). These optional items will be implemented behind feature flags and prioritized per roadmap.
+- ✅ MiniPlayer: minimizable, draggable queue with drag-and-drop reordering and removal (`src/components/MiniPlayer.tsx`).
+- ✅ Persistent playback controls (play/pause/next/prev) added to the Music page and wired to `useSpotifyPlaybackStore` (`src/store/spotifyPlaybackStore.ts`, `src/services/spotifyPlayback.ts`).
+
 ---
 
 ## 🚧 Phase 2: Next Steps (Ready to Implement)

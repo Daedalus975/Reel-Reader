@@ -13,3 +13,6 @@ export { MusicDetailModal } from './MusicDetailModal'
 export { BulkUpdateModal } from './BulkUpdateModal'
 
 export { SpotifySearch } from './SpotifySearch'
+export { MiniPlayer } from './MiniPlayer'
+export { DeviceSelector } from './DeviceSelector'
+export { FoldoutPlayer } from './FoldoutPlayer'

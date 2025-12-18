@@ -10,8 +10,13 @@ import {
   playTrack,
   playPlaylist,
   initSpotifyPlayback,
+  setShuffle,
+  setRepeat,
+  transferPlaybackToDevice,
 } from '@/services/spotifyPlayback'
 import { getStoredToken } from '@/services/spotify'
+import { useMusicVideoPlaylistStore } from '@store/musicVideoPlaylistStore'
+import { useSpotifyStore } from '@store/spotifyStore'
 
 interface CurrentTrack {
   id: string
@@ -28,9 +33,14 @@ interface SpotifyPlaybackState {
   currentTrack: CurrentTrack | null
   volume: number
   isInitialized: boolean
+  _pollIntervalId: any | null
 
   // Actions
   initializePlayback: () => Promise<void>
+  stopPolling: () => void
+  setShuffle: (state: boolean) => Promise<void>
+  setRepeat: (mode: 'off' | 'track' | 'context') => Promise<void>
+  transferToDevice: (deviceId: string) => Promise<void>
   play: () => Promise<void>
   pause: () => Promise<void>
   togglePlay: () => Promise<void>
@@ -48,10 +58,28 @@ export const useSpotifyPlaybackStore = create<SpotifyPlaybackState>((set, get) =
   currentTrack: null,
   volume: 0.5,
   isInitialized: false,
+  _pollIntervalId: null as any,
 
   initializePlayback: async () => {
-    // Playback will be initialized in SpotifyCallback
+    // Playback will be initialized in SpotifyCallback; start polling for state
     set({ isInitialized: true })
+    try {
+      await initSpotifyPlayback()
+      // Start polling
+      const startPolling = async () => {
+        try {
+          const state = await getCurrentState()
+          get().updateCurrentState(state)
+        } catch (err) {
+          // ignore polling errors
+        }
+      }
+      await startPolling()
+      const id = setInterval(startPolling, 1000)
+      set({ _pollIntervalId: id })
+    } catch (err) {
+      console.error('Failed to initialize playback store polling:', err)
+    }
   },
 
   play: async () => {
@@ -60,6 +88,30 @@ export const useSpotifyPlaybackStore = create<SpotifyPlaybackState>((set, get) =
       set({ isPlaying: true })
     } catch (err) {
       console.error('Failed to play:', err)
+    }
+  },
+
+  setShuffle: async (state: boolean) => {
+    try {
+      await setShuffle(state)
+    } catch (err) {
+      console.error('Failed to set shuffle:', err)
+    }
+  },
+
+  setRepeat: async (mode: 'off' | 'track' | 'context') => {
+    try {
+      await setRepeat(mode)
+    } catch (err) {
+      console.error('Failed to set repeat:', err)
+    }
+  },
+
+  transferToDevice: async (deviceId: string) => {
+    try {
+      await transferPlaybackToDevice(deviceId, true)
+    } catch (err) {
+      console.error('Failed to transfer playback:', err)
     }
   },
 
@@ -126,6 +178,14 @@ export const useSpotifyPlaybackStore = create<SpotifyPlaybackState>((set, get) =
       }
       await playTrack(trackUri)
       set({ isPlaying: true })
+
+      // Keep the app queue in sync: set single-track queue so the foldout shows the track
+      try {
+        const qStore = useMusicVideoPlaylistStore.getState()
+        qStore.setQueue([trackUri], trackUri)
+      } catch (e) {
+        // non-fatal
+      }
     } catch (err: any) {
       console.error('Failed to play track:', err)
       alert(`Failed to play track: ${err?.message || 'Unknown error'}`)
@@ -142,9 +202,35 @@ export const useSpotifyPlaybackStore = create<SpotifyPlaybackState>((set, get) =
       }
       await playPlaylist(playlistUri)
       set({ isPlaying: true })
+
+      // When playing a playlist, also populate the app queue so the foldout shows it
+      try {
+        const parts = playlistUri.split(':')
+        const playlistId = parts[parts.length - 1]
+        const sStore = useSpotifyStore.getState()
+        // Ensure we have tracks loaded
+        if (!sStore.playlistTracks[playlistId]) {
+          await sStore.fetchPlaylistTracks(playlistId)
+        }
+        const tracks = useSpotifyStore.getState().playlistTracks[playlistId] || []
+        if (tracks.length) {
+          const uris = tracks.map((t) => t.uri)
+          useMusicVideoPlaylistStore.getState().setQueue(uris, uris[0])
+        }
+      } catch (e) {
+        // non-fatal; don't block playback
+      }
     } catch (err: any) {
       console.error('Failed to play playlist:', err)
       alert(`Failed to play playlist: ${err?.message || 'Unknown error'}.`)
+    }
+  },
+
+  stopPolling: () => {
+    const id = get()._pollIntervalId
+    if (id) {
+      clearInterval(id)
+      set({ _pollIntervalId: null })
     }
   },
 

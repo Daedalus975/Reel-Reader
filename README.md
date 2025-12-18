@@ -45,6 +45,7 @@ Built with a custom dark color palette:
 - Adult content toggle with encryption
 - Metadata fetch via API
 - Watchlist, playlists, collections
+- Optional features catalog: `OPTIONAL_FEATURES.md` (imported 1–200 feature catalog)
 
 ### Planned
 - Watch parties and live chat
@@ -58,9 +59,16 @@ Built with a custom dark color palette:
 
 ### Handoff / Env Setup
 - Copy `.env.example` to `.env.local` and fill in your own keys (TMDB, OMDb, Last.fm, YouTube Data; optional Spotify, FANZA/DLsite/R18, CORS proxy). Do not ship your secrets in the binary.
-- Spotify: use Web API with Authorization Code + PKCE. Register redirect `http://127.0.0.1:5173/auth/spotify/callback` (or your prod URL), and put the matching value in `VITE_SPOTIFY_REDIRECT_URI`.
+
+- Spotify: Authorization Code + PKCE is supported — register redirect `http://127.0.0.1:5173/auth/spotify/callback` (or your prod URL) and set `VITE_SPOTIFY_REDIRECT_URI`.
+  - Note: The app uses the Spotify Web Playback SDK only to register an in-browser device (the virtual "Reel Reader" device). Actual playback control is performed via the Spotify Web API (`/v1/me/player/*`).
+  - Implementation details: PKCE verifier fallback (encoded in `state`) is used to recover the verifier across reloads; duplicate token-exchange is guarded to handle React Strict Mode; tokens are automatically refreshed when near expiry. Playlists can be expanded and individual tracks played from the Music page; a minimizable draggable `MiniPlayer` and persistent playback controls are included (see `src/pages/Music.tsx`, `src/components/MiniPlayer.tsx`, `src/services/spotifyPlayback.ts`).
+
 - Desktop builds (Tauri/Electron): keep keys external (config file or first-run input). If you need to protect secrets, use a tiny backend/proxy and keep secrets server-side.
 - Restart `npm run dev` after adding env values so Vite picks them up.
+
+### Disk space note
+- If `src-tauri/target` grows large, it contains Rust/Tauri build artifacts and can be safely deleted to reclaim disk space. It will be rebuilt automatically on the next `npm run dev` or `npm run build` that targets Tauri.
 
 ### Prerequisites
 - Node.js 18+ and npm/yarn

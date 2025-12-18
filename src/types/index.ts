@@ -104,4 +104,8 @@ export interface UIState {
   sidebarEdgeOpenEnabled: boolean
   mediaViewMode?: 'grid' | 'list'
   mediaCardSize?: 'xs' | 'sm' | 'md' | 'lg'
+
+  // Player foldout state
+  playerOpen?: boolean
+  playerEdgeOpenEnabled?: boolean
 }

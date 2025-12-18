@@ -10,6 +10,11 @@ interface UIStore extends UIState {
   setSidebarEdgeOpenEnabled: (enabled: boolean) => void
   setMediaViewMode: (mode: 'grid' | 'list') => void
   setMediaCardSize: (size: 'xs' | 'sm' | 'md' | 'lg') => void
+
+  // Player foldout controls
+  togglePlayer: () => void
+  setPlayerOpen: (open: boolean) => void
+  setPlayerEdgeOpenEnabled: (enabled: boolean) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -20,6 +25,8 @@ export const useUIStore = create<UIStore>((set) => ({
   sidebarEdgeOpenEnabled: true,
   mediaViewMode: 'grid',
   mediaCardSize: 'md',
+  playerOpen: false,
+  playerEdgeOpenEnabled: true,
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -29,4 +36,9 @@ export const useUIStore = create<UIStore>((set) => ({
   setSidebarEdgeOpenEnabled: (enabled) => set({ sidebarEdgeOpenEnabled: enabled }),
   setMediaViewMode: (mode) => set({ mediaViewMode: mode }),
   setMediaCardSize: (size) => set({ mediaCardSize: size }),
+
+  // Player foldout controls
+  togglePlayer: () => set((state) => ({ playerOpen: !state.playerOpen })),
+  setPlayerOpen: (open) => set({ playerOpen: open }),
+  setPlayerEdgeOpenEnabled: (enabled) => set({ playerEdgeOpenEnabled: enabled }),
 }))
