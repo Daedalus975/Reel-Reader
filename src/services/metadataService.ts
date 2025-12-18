@@ -1,5 +1,3 @@
-import type { Media } from '../../types'
-
 export interface MetadataMatch {
   id: string
   title: string

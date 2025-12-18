@@ -4,6 +4,11 @@ import { BulkUpdateModal } from '@components/index'
 import { isSpotifyConnected, startSpotifyAuth, disconnectSpotify, refreshSpotifyToken } from '@/services/spotify'
 import { useSpotifyStore } from '@store/spotifyStore'
 
+// Feature flags & feature-specific UIs
+import { isFeatureEnabled } from '@/utils/featureFlags'
+import SourcesSettings from '@components/SourcesSettings'
+import MetadataSettings from '@components/MetadataSettings'
+
 export const Settings: React.FC = () => {
   const edgeOpenEnabled = useUIStore((s) => s.sidebarEdgeOpenEnabled)
   const setEdgeOpenEnabled = useUIStore((s) => s.setSidebarEdgeOpenEnabled)
@@ -143,6 +148,10 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* Content Settings removed: adult visibility is enforced per profile */}
+
+      {/* Optional Feature Views (feature-flag gated) */}
+      {isFeatureEnabled('feature_external_sources') && <SourcesSettings />}
+      {isFeatureEnabled('feature_metadata_artwork') && <MetadataSettings />}
 
       {/* About Section */}
       <section className="bg-surface p-6 rounded-none max-w-2xl">
