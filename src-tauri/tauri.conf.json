@@ -8,9 +8,26 @@
   },
   "package": {
     "productName": "Reel Reader",
-    "version": "0.1.0"
+    "version": "1.0.0"
   },
   "tauri": {
+    "allowlist": {
+      "all": false,
+      "dialog": {
+        "all": false,
+        "open": true,
+        "save": true,
+        "message": true
+      },
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": true,
+        "readDir": true,
+        "exists": true,
+        "scope": ["$APP/**", "$RESOURCE/**", "**"]
+      }
+    },
     "windows": [
       {
         "title": "Reel Reader",

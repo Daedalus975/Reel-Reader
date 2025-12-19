@@ -34,9 +34,10 @@ export const Search: React.FC = () => {
   const [onlineResults, setOnlineResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [addedItemNotification, setAddedItemNotification] = useState<{ title: string; path: string } | null>(null)
-  const [sortBy, setSortBy] = useState<'relevance' | 'year' | 'rating' | 'title' | 'popularity'>('relevance')
+  const [sortBy, setSortBy] = useState<'relevance' | 'year' | 'rating' | 'title' | 'dateAdded' | 'popularity'>('relevance')
   const [yearFilter, setYearFilter] = useState<{ min?: number; max?: number }>({})
   const [ratingFilter, setRatingFilter] = useState<number | undefined>()
+  const [librarySortBy, setLibrarySortBy] = useState<'dateAdded' | 'year' | 'rating' | 'title'>('dateAdded')
   const navigate = useNavigate()
 
   const genres = useMemo(() => {
@@ -266,7 +267,47 @@ export const Search: React.FC = () => {
     return filtered
   }, [onlineResults, sortBy, yearFilter, ratingFilter, searchMode, selectedType])
 
-  const results = searchMode === 'library' ? filteredMedia : []
+  // Apply sorting to library results
+  const sortedLibraryResults = useMemo(() => {
+    if (searchMode !== 'library') return []
+    
+    let sorted = [...filteredMedia]
+    
+    // Apply year filter
+    if (yearFilter.min || yearFilter.max) {
+      sorted = sorted.filter((m) => {
+        if (!m.year) return true
+        if (yearFilter.min && m.year < yearFilter.min) return false
+        if (yearFilter.max && m.year > yearFilter.max) return false
+        return true
+      })
+    }
+    
+    // Apply rating filter
+    if (ratingFilter) {
+      sorted = sorted.filter((m) => {
+        return !m.rating || m.rating >= ratingFilter
+      })
+    }
+    
+    sorted.sort((a, b) => {
+      switch (librarySortBy) {
+        case 'year':
+          return (b.year || 0) - (a.year || 0)
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0)
+        case 'title':
+          return a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+        case 'dateAdded':
+        default:
+          return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
+      }
+    })
+    
+    return sorted
+  }, [filteredMedia, librarySortBy, yearFilter, ratingFilter, searchMode])
+
+  const results = searchMode === 'library' ? sortedLibraryResults : []
   const availableTypes = currentProfile?.adultContentEnabled
     ? MEDIA_TYPES.filter(t => t.isAdult)
     : MEDIA_TYPES.filter(t => !t.isAdult)
@@ -340,6 +381,20 @@ export const Search: React.FC = () => {
         {searchMode === 'library' ? (
           <>
             <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-300">Sort by</label>
+              <select
+                value={librarySortBy}
+                onChange={(e) => setLibrarySortBy(e.target.value as any)}
+                className="bg-dark text-light px-3 py-2 text-sm rounded-none border border-dark"
+              >
+                <option value="dateAdded">Date Added</option>
+                <option value="year">Year</option>
+                <option value="rating">Rating</option>
+                <option value="title">Title A-Z</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
               <label className="text-sm text-gray-300" htmlFor="search-genre">Genre</label>
               <select
                 id="search-genre"
@@ -355,6 +410,43 @@ export const Search: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {(selectedType === 'movie' || selectedType === 'tv' || selectedType === 'all') && (
+              <>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-300">Year</label>
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={yearFilter.min || ''}
+                    onChange={(e) => setYearFilter({ ...yearFilter, min: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="bg-dark text-light px-3 py-2 text-sm rounded-none border border-dark w-20"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={yearFilter.max || ''}
+                    onChange={(e) => setYearFilter({ ...yearFilter, max: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="bg-dark text-light px-3 py-2 text-sm rounded-none border border-dark w-20"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-300">Min Rating</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="0-10"
+                    value={ratingFilter || ''}
+                    onChange={(e) => setRatingFilter(e.target.value ? parseFloat(e.target.value) : undefined)}
+                    className="bg-dark text-light px-3 py-2 text-sm rounded-none border border-dark w-20"
+                  />
+                </div>
+              </>
+            )}
 
             <label className="flex items-center gap-2 text-sm text-gray-300">
               <input
@@ -427,6 +519,7 @@ export const Search: React.FC = () => {
         <>
           <p className="text-gray-400 text-sm mb-4">
             {results.length} result{results.length !== 1 ? 's' : ''}
+            {results.length !== filteredMedia.length && ` (filtered from ${filteredMedia.length})`}
           </p>
 
           <div className={(() => {

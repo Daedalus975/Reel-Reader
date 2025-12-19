@@ -1,5 +1,23 @@
 import type { MediaType } from '../types'
-import { convertFileSrc } from '@tauri-apps/api/tauri'
+// convertFileSrc is Tauri-specific — import dynamically only on desktop
+import { isDesktop } from '@/utils/runtime'
+let _convertFileSrc: ((s: string) => string) | null = null
+async function getConvertFileSrc(): Promise<(s: string) => string> {
+  if (_convertFileSrc) return _convertFileSrc
+  if (!isDesktop()) {
+    const fallback = (s: string) => s
+    _convertFileSrc = fallback
+    return fallback
+  }
+  try {
+    const mod = await import('@tauri-apps/api/tauri')
+    _convertFileSrc = mod.convertFileSrc
+    return _convertFileSrc
+  } catch (err) {
+    _convertFileSrc = (s: string) => s
+    return _convertFileSrc
+  }
+}
 
 export interface ExtractedMetadata {
   duration?: number // seconds
@@ -45,6 +63,8 @@ async function getFileSize(filePath: string): Promise<number | undefined> {
 type ProbedMedia = { duration?: number; resolution?: string }
 
 async function probeMedia(filePath: string, kind: 'video' | 'audio'): Promise<ProbedMedia> {
+  // Resolve convertFileSrc ahead of the Promise executor so we can synchronously assign el.src
+  const convert = await getConvertFileSrc()
   return new Promise((resolve) => {
     const el = document.createElement(kind === 'video' ? 'video' : 'audio') as HTMLMediaElement
     el.preload = 'metadata'
@@ -53,7 +73,7 @@ async function probeMedia(filePath: string, kind: 'video' | 'audio'): Promise<Pr
     el.style.height = '1px'
     el.style.opacity = '0'
     el.style.pointerEvents = 'none'
-    el.src = convertFileSrc(filePath)
+    el.src = convert(filePath)
 
     const cleanup = () => {
       el.removeEventListener('loadedmetadata', onLoaded)

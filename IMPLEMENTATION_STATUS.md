@@ -40,26 +40,44 @@
 - ✅ MiniPlayer: minimizable, draggable queue with drag-and-drop reordering and removal (`src/components/MiniPlayer.tsx`).
 - ✅ Persistent playback controls (play/pause/next/prev) added to the Music page and wired to `useSpotifyPlaybackStore` (`src/store/spotifyPlaybackStore.ts`, `src/services/spotifyPlayback.ts`).
 
+### Notifications & Job Queue System (Issue #13)
+- ✅ **Job Queue Store** (`src/store/jobQueueStore.ts`): State management for background jobs with retry logic
+- ✅ **Notifications Store** (`src/store/notificationsStore.ts`): Toast notifications and notification center (max 50, persisted)
+- ✅ **Job Queue Service** (`src/services/jobQueue.ts`): Job execution engine with exponential backoff (1s→16s)
+- ✅ **UI Components**:
+  - `NotificationToast.tsx`: Auto-dismiss toasts (5s for non-errors)
+  - `NotificationToastContainer.tsx`: Shows 3 recent unread toasts in bottom-right
+  - `NotificationsCenter.tsx`: Slide-out panel with full history and actions
+- ✅ **HeaderBar Integration**: Bell icon with dynamic unread count badge
+- ✅ **Real Implementation**: Import page now uses job queue for folder scanning
+- ✅ **Job Types**: scan, import, metadata, backup, encrypt, download
+- ✅ **Documentation**: See `NOTIFICATIONS_JOBS.md` for full guide
+- ✅ **Console Testing**: `testNotifications()`, `testJobQueue()`, `testMultipleJobs()` available in browser console
+- 🔄 **Next Steps**: Wire metadata fetching, add error log viewer, debug mode toggle
+
 ---
 
 ## 🚧 Phase 2: Next Steps (Ready to Implement)
 
-### YouTube Trailer Auto-Fetch
-**File:** `src/services/tmdb.ts`
-- Add `getMovieVideos(movieId)` and `getShowVideos(showId)` using TMDB `/videos` endpoint
-- Extract YouTube trailer key and build URL
-- Auto-populate `trailerUrl` when adding movies/TV
-- Store in `trailerUrl` field for easy override
+### ✅ YouTube Trailer Auto-Fetch
+**Files:** `src/services/tmdb.ts`, `src/pages/Detail.tsx`
+- ✅ Added `getMovieTrailer(movieId)` and `getShowTrailer(showId)` using TMDB `/videos` endpoint
+- ✅ Extract YouTube trailer key and build URL
+- ✅ Auto-fetch button in Detail edit mode fetches trailer from TMDB
+- ✅ Trailer display with responsive YouTube embed (16:9)
+- ✅ Book preview embed support for Google Books URLs
+- ✅ Open in YouTube link for external viewing
 
-### Sortable/Filterable Search UI
-**Files:** `src/pages/Search.tsx`, `src/components/AddContentModal.tsx`
-- Add sort dropdown: Relevance, Popularity, Year, Rating, Title A-Z
-- Add filter chips per type:
-  - Movies/TV: Genre, Year range, Rating
-  - Music: Genre, Year, Explicit filter
-  - Books: Genre, Year, Author
-- Live search with debounce (already partially implemented)
-- Results count and "No results" state
+### ✅ Sortable/Filterable Search UI
+**Files:** `src/pages/Search.tsx`
+- ✅ Library mode: Sort by Date Added, Year, Rating, Title A-Z
+- ✅ Online mode: Sort by Relevance, Popularity, Year, Rating, Title A-Z
+- ✅ Filter controls:
+  - Movies/TV: Genre dropdown, Year range (min/max), Min Rating (0-10)
+  - All types: Favorites Only toggle
+- ✅ Live filtering with debounced search
+- ✅ Results count with filtered count display (e.g., "15 results (filtered from 50)")
+- ✅ "No results" state with helpful messages
 
 ### Preview/Trailer Display in Detail
 **File:** `src/pages/Detail.tsx`
@@ -86,43 +104,84 @@ npm install music-metadata pdf-parse fluent-ffmpeg
 
 **Integration:** Call when user picks a file; auto-fill form fields
 
-### In-App Video Player
-**New Package:** `video.js` or `@vidstack/react`
-```bash
-npm install video.js @types/video.js
-```
+### ✅ In-App Video Player
+**Package:** `video.js` + `@types/video.js` (installed)
 
 **New Component:** `src/components/VideoPlayer.tsx`
-- Full controls (play/pause, seek, volume, fullscreen)
-- Resume from saved progress
-- Subtitle support (.srt, .vtt)
-- Playback speed control
-- Quality selector for multi-quality files
+- ✅ Full controls (play/pause, seek, volume, fullscreen)
+- ✅ Resume from saved progress position
+- ✅ Playback speed control (0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x)
+- ✅ Picture-in-picture support
+- ✅ Keyboard shortcuts (Space, arrows, F, M)
+- ✅ Responsive fluid layout
+- ✅ Auto-detect video type (mp4, webm, mkv, mov, ogg)
+- 🔜 Subtitle support (.srt, .vtt) — track selection UI pending
 
-**New Page:** `src/pages/Watch.tsx` (replaces placeholder)
-- Embed VideoPlayer with `item.filePath` or `item.trailerUrl`
-- Save progress on pause/close
-- Next episode button for TV shows
+**Updated Page:** `src/pages/Watch.tsx`
+- ✅ VideoPlayer embedded with local file or trailer URL
+- ✅ Progress saved on unmount
+- ✅ Next episode button for TV shows (auto-detects series)
+- ✅ Mark watched/favorite actions
+- ✅ Poster image display
+- ✅ Keyboard shortcuts hint
 
-### In-App Music Player
-**New Package:** `howler.js` or native HTML5 Audio
-```bash
-npm install howler @types/howler
-```
+### ✅ Music Player Enhancements (Issue #12)
+**Package:** `howler.js` + `@types/howler` (installed)
 
-**New Component:** `src/components/MusicPlayer.tsx`
-- Bottom bar player (like Spotify)
-- Play/pause, skip, shuffle, repeat
-- Volume slider, seek bar
-- Now playing artwork + metadata
-- Queue management
+**Enhanced Component:** `src/components/MusicPlayerBar.tsx`
+- ✅ Howler.js integration replacing native Audio API
+- ✅ Crossfade between tracks (0-12s configurable)
+- ✅ Gapless playback with preloading
+- ✅ Volume normalization (target volume 0-1)
+- ✅ ReplayGain support (track/album mode, preamp -15 to +15 dB)
+- ✅ EQ presets (flat/rock/pop/jazz/classical/electronic/bass-boost)
+- ✅ Sleep timer with countdown
+- ✅ Settings persist via Zustand
 
-**Feature:** Music Video Playlist Builder
-**New Page:** `src/pages/MusicPlaylists.tsx`
-- Create/edit/delete playlists
-- Drag-drop reorder tracks
-- "Play All" → opens YouTube videos in sequence or embeds
-- Export playlist as M3U/JSON
+**New Service:** `src/services/lyricsService.ts`
+- ✅ Fetch lyrics from LRCLIB (open-source, no API key)
+- ✅ LRC format parsing for time-synced lyrics
+- ✅ Plain text fallback
+- ✅ Genius API placeholder for future
+- 🔜 Local metadata extraction from audio files
+
+**New Component:** `src/components/LyricsPanel.tsx`
+- 🔜 Display plain text or time-synced lyrics
+- 🔜 Auto-scroll to current line
+- 🔜 Click to seek to line
+- 🔜 Toggle between synced/plain view
+
+**New Component:** `src/components/AudioVisualizer.tsx`
+- ✅ Canvas-based Web Audio API integration with Howler
+- ✅ 4 visualizer modes: Bars, Waveform, Circular, Particles
+- ✅ Real-time frequency analysis
+- ✅ Fullscreen overlay with keyboard controls
+
+**New Component:** `src/components/AudioSettingsPanel.tsx`
+- ✅ Crossfade duration slider
+- ✅ Gapless toggle
+- ✅ Normalization controls
+- ✅ ReplayGain settings
+- ✅ EQ preset dropdown
+- ✅ Sleep timer configuration
+
+**New Service:** `src/services/playlistService.ts`
+- ✅ M3U/M3U8 playlist parsing
+- ✅ Export library to M3U file
+- ✅ Import M3U and match with library items
+- ✅ Title + artist matching logic
+
+**New Component:** `src/components/PlaylistManager.tsx`
+- ✅ Import/export M3U playlists
+- ✅ Match imported tracks with library
+- ✅ Play matched tracks button
+- ✅ Visual feedback for matched/unmatched tracks
+
+**Updated Page:** `src/pages/Music.tsx`
+- ✅ Settings button for AudioSettingsPanel
+- ✅ Lyrics button for LyricsPanel
+- ✅ Playlist Manager button
+- ✅ Modal overlays for all panels
 
 ### In-App Book Reader
 **New Package:** `epubjs` (EPUB), `react-pdf` (PDF)
@@ -166,10 +225,15 @@ npm install epubjs react-pdf
    - Create VideoPlayer component
    - Update Watch page to use it
 
-5. **Build Music Player** (~3 hours)
-   - Install `howler` or use native Audio
-   - Bottom bar player component
-   - Persistent playback state
+5. **✅ Build Music Player Enhancements** (~6 hours)
+   - ✅ Install `howler` + `@types/howler`
+   - ✅ Integrate Howler into MusicPlayerBar
+   - ✅ Crossfade, gapless, normalization, ReplayGain, EQ
+   - ✅ Audio settings panel with persist
+   - ✅ Lyrics service + panel (UI pending)
+   - ✅ Audio visualizer with 4 modes
+   - ✅ M3U playlist import/export
+   - ✅ Playlist manager UI
 
 6. **Build Book Reader** (~4 hours)
    - Install `epubjs` and `react-pdf`
@@ -216,6 +280,33 @@ Get API keys:
    - Add/view book → verify "Authors", "Mark Finished"
    - Add/view movie → verify "Stars", "Mark Watched"
    - Add/view music → verify "Listen" button
+
+---
+
+## Optional Features Mapping — Implemented vs Pending
+
+This section cross-references the 200-feature catalog and the aligned functions list. It focuses on items we have implemented or begun, plus immediate next steps.
+
+### Implemented
+- External Sources: Manual scan (desktop-aware) in [src/pages/Import.tsx](src/pages/Import.tsx) using the scanner at [src/features/import/importScanner.ts](src/features/import/importScanner.ts)
+- Playback (Spotify): Authorization Code + PKCE, Web Playback SDK device, API controls; UI in [src/components/MusicPlayerBar.tsx](src/components/MusicPlayerBar.tsx), [src/components/MiniPlayer.tsx](src/components/MiniPlayer.tsx), [src/components/FoldoutPlayer.tsx](src/components/FoldoutPlayer.tsx)
+- Profiles: Create/switch profiles validated by tests in [tests/profile-system.spec.ts](tests/profile-system.spec.ts)
+- Desktop/Web Gating: `isDesktop` runtime guard and dynamic Tauri imports, plus web banner [src/components/WebDesktopBanner.tsx](src/components/WebDesktopBanner.tsx)
+- Books: Basic EPUB/PDF open path wired via [src/components/BookReader.tsx](src/components/BookReader.tsx)
+
+### In Progress
+- External Sources: Add library source UI/editor, and wire source persistence (store + settings). Watcher service scaffolding and incremental scanner to follow.
+- Playback: Seek/scrub wiring alignment across players; persistent bottom player improvements.
+- Adult Mode: Pages exist; PIN gating and enforcement rules pending.
+
+### Planned (near-term)
+- Metadata Providers & Artwork: Provider adapters, manual match picker, artwork fetch/upload, and lockable fields.
+- Queue Management & Playlists: Drag/drop reorder, per-track actions, playlist import/export (M3U/JSON).
+- Video Player: Fullscreen, speed, subtitles, aspect ratio override.
+- Casting: DLNA (device discovery + send to device), Chromecast (flagged).
+- Notifications & Jobs: Background job queue with retry/backoff and a notifications center for imports/metadata/backups.
+
+Tracking: See detailed items and statuses in [OPTIONAL_FEATURES.md](OPTIONAL_FEATURES.md) under “Functions Aligned to 200 Features — Implementation Targets”.
 
 ---
 

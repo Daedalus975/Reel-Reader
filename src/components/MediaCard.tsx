@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { PlayCircle, Heart, ChevronRight } from 'lucide-react'
+import { PlayCircle, Heart, ChevronRight, Edit2, FolderPlus } from 'lucide-react'
 import type { Media } from '../types'
 import { useLibraryStore } from '@store/libraryStore'
 import { useUIStore } from '@store/index'
@@ -15,7 +15,7 @@ interface MediaCardProps {
   media: Media
   onClick?: () => void
   size?: 'xs' | 'sm' | 'md' | 'lg'
-  viewMode?: 'grid' | 'list'
+  viewMode?: 'grid' | 'list' | 'compact' | 'poster-wall'
 }
 
 function getYouTubeId(url?: string) {
@@ -84,7 +84,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, view
     e.preventDefault()
     e.stopPropagation()
     const approxWidth = 208
-    const approxHeight = 160
+    const approxHeight = 280
     const x = Math.min(e.clientX, window.innerWidth - approxWidth - 4)
     const y = Math.min(e.clientY, window.innerHeight - approxHeight - 4)
     setContextPos({ x, y })
@@ -107,6 +107,16 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, view
 
   const handleOpenDetail = () => {
     navigate(`/detail/${media.id}`)
+    closeContext()
+  }
+
+  const handleEdit = () => {
+    navigate(`/detail/${media.id}?edit=true`)
+    closeContext()
+  }
+
+  const handleAddToCollection = () => {
+    navigate(`/detail/${media.id}?addToCollection=true`)
     closeContext()
   }
 
@@ -203,9 +213,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, view
           </div>
         )}
 
-        {media.rating && (
+        {(media.myRating || media.rating) && (
           <div className="absolute top-2 left-2 z-20 bg-highlight text-dark px-2 py-1 rounded-none font-semibold text-[10px]">
-            ⭐ {media.rating.toFixed(1)}
+            {media.myRating ? '⭐ ' + media.myRating.toFixed(1) + ' (You)' : '⭐ ' + media.rating!.toFixed(1)}
           </div>
         )}
       </div>
@@ -249,8 +259,35 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, size, view
           <button className="block w-full text-left px-4 py-2 hover:bg-dark" onClick={handleOpenDetail}>
             Open details
           </button>
+          <button className="block w-full text-left px-4 py-2 hover:bg-dark flex items-center gap-2" onClick={handleEdit}>
+            <Edit2 size={14} />
+            Edit media
+          </button>
+          <button className="block w-full text-left px-4 py-2 hover:bg-dark flex items-center gap-2" onClick={handleAddToCollection}>
+            <FolderPlus size={14} />
+            Add to collection
+          </button>
           <button className="block w-full text-left px-4 py-2 hover:bg-dark" onClick={handleToggleFavorite}>
             {media.isFavorite ? 'Remove favorite' : 'Add to favorites'}
+          </button>
+          <button 
+            className="block w-full text-left px-4 py-2 hover:bg-dark"
+            onClick={() => {
+              const markAsWatched = useLibraryStore.getState().markAsWatched
+              markAsWatched(media.id, media.progress ?? 0)
+              closeContext()
+            }}
+          >
+            {media.watched ? 'Mark as unwatched' : 'Mark as watched'}
+          </button>
+          <button 
+            className="block w-full text-left px-4 py-2 hover:bg-dark"
+            onClick={() => {
+              closeContext()
+              navigate(`/library?genre=${media.genres[0]}`)
+            }}
+          >
+            View similar
           </button>
           <button
             className="block w-full text-left px-4 py-2 hover:bg-dark"

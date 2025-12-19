@@ -79,11 +79,21 @@ theme.extend.colors = {
 
 ### HeaderBar
 
+**Brand Logo**: Uses **Pacifico** cursive font with gradient (from-primary → highlight → accent) and BookOpen icon
+
 ```html
 <header class="fixed top-0 left-0 right-0 bg-dark border-b border-surface h-16 z-40">
   <div class="h-full px-4 flex items-center justify-between">
-    <!-- Logo -->
-    <span class="text-highlight font-bold text-lg tracking-wider">REEL READER</span>
+    <!-- Logo with Icon and Gradient -->
+    <a href="/" class="flex items-center gap-2 group">
+      <BookOpen size={28} class="text-primary group-hover:text-highlight transition-colors" />
+      <span 
+        class="text-2xl font-bold bg-gradient-to-r from-primary via-highlight to-accent bg-clip-text text-transparent hover:scale-105 transition-transform"
+        style="font-family: 'Pacifico', cursive"
+      >
+        Reel Reader
+      </span>
+    </a>
     
     <!-- Search -->
     <div class="flex-1 max-w-xs mx-4 hidden md:flex">
@@ -103,6 +113,13 @@ theme.extend.colors = {
   </div>
 </header>
 ```
+
+**Brand Font Requirements**:
+- **Font**: Pacifico (Google Fonts)
+- **Import**: `<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />`
+- **Gradient**: `bg-gradient-to-r from-primary via-highlight to-accent bg-clip-text text-transparent`
+- **Icon**: BookOpen from lucide-react (size 28, primary color with hover highlight)
+- **Typography**: text-2xl, font-bold, proper case "Reel Reader" (not all caps)
 
 ### Sidebar Navigation
 

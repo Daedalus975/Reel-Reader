@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, X, Music2 } from 'lucide-react'
+import { Howl } from 'howler'
 import { useLibraryStore } from '@store/libraryStore'
 import { useMusicPlayerStore } from '@store/musicPlayerStore'
 import { useSpotifyPlaybackStore } from '@/store/spotifyPlaybackStore'
+import { useAudioSettingsStore } from '@/store/audioSettingsStore'
 
 function toFileUrl(path?: string) {
   if (!path) return undefined
@@ -37,9 +39,13 @@ export const MusicPlayerBar: React.FC = () => {
     clear,
   } = useMusicPlayerStore()
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioSettings = useAudioSettingsStore()
+  const currentHowlRef = useRef<Howl | null>(null)
+  const nextHowlRef = useRef<Howl | null>(null)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const updateIntervalRef = useRef<number>()
+  const crossfadeInProgressRef = useRef(false)
 
   // Spotify playback overrides local audio when active
   const spotifyCurrent = useSpotifyPlaybackStore((s) => s.currentTrack)
@@ -60,47 +66,152 @@ export const MusicPlayerBar: React.FC = () => {
     return undefined
   }, [currentMedia])
 
-  // Load and autoplay when track changes (local audio)
-  useEffect(() => {
-    const audio = audioRef.current
-    if (spotifyCurrent || !audio || !currentMedia || !sourceUrl) return
-    audio.src = sourceUrl
-    audio.currentTime = currentMedia.progress || 0
-    audio.volume = volume
-    audio.load()
-    audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
-  }, [currentMedia, sourceUrl, volume, setIsPlaying, spotifyCurrent])
+  // Apply audio enhancements (EQ, normalization, ReplayGain)
+  const applyAudioEnhancements = (howl: Howl) => {
+    let targetVolume = volume
 
-  // Wire audio events for local audio
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    const handleLoaded = () => setDuration(audio.duration || 0)
-    const handleTime = () => setCurrentTime(audio.currentTime)
-    const handleEnded = () => {
-      if (currentMedia) {
-        markAsWatched(currentMedia.id, audio.duration || audio.currentTime || 0)
-      }
-      playNext()
+    // Apply normalization
+    if (audioSettings.normalizationEnabled) {
+      targetVolume = Math.min(1, audioSettings.targetVolume)
     }
-    const handlePlay = () => setIsPlaying(true)
-    const handlePause = () => setIsPlaying(false)
 
-    audio.addEventListener('loadedmetadata', handleLoaded)
-    audio.addEventListener('timeupdate', handleTime)
-    audio.addEventListener('ended', handleEnded)
-    audio.addEventListener('play', handlePlay)
-    audio.addEventListener('pause', handlePause)
+    // Apply ReplayGain (simulated via volume adjustment)
+    if (audioSettings.replayGainEnabled) {
+      const preampMultiplier = Math.pow(10, audioSettings.replayGainPreamp / 20)
+      targetVolume = Math.min(1, targetVolume * preampMultiplier)
+    }
+
+    howl.volume(targetVolume)
+  }
+
+  // Preload next track for gapless playback
+  const preloadNextTrack = () => {
+    if (!audioSettings.gaplessEnabled) return
+    const nextIndex = currentIndex + 1
+    if (nextIndex >= queue.length) return
+
+    const nextId = queue[nextIndex]
+    const nextMedia = media.find((m) => m.id === nextId)
+    if (!nextMedia) return
+
+    let nextUrl: string | undefined
+    if (nextMedia.filePath) nextUrl = toFileUrl(nextMedia.filePath)
+    else if (nextMedia.previewUrl && !isYouTube(nextMedia.previewUrl)) nextUrl = nextMedia.previewUrl
+    else if (nextMedia.trailerUrl && !isYouTube(nextMedia.trailerUrl)) nextUrl = nextMedia.trailerUrl
+
+    if (nextUrl && !nextHowlRef.current) {
+      nextHowlRef.current = new Howl({
+        src: [nextUrl],
+        html5: true,
+        preload: true,
+        volume: 0,
+      })
+    }
+  }
+
+  // Load and play current track with Howler
+  useEffect(() => {
+    if (spotifyCurrent || !currentMedia || !sourceUrl) return
+
+    // Clean up previous Howl
+    if (currentHowlRef.current) {
+      currentHowlRef.current.unload()
+      currentHowlRef.current = null
+    }
+    if (nextHowlRef.current) {
+      nextHowlRef.current.unload()
+      nextHowlRef.current = null
+    }
+
+    // Create new Howl instance
+    const howl = new Howl({
+      src: [sourceUrl],
+      html5: true,
+      volume: volume,
+      onload: () => {
+        setDuration(howl.duration())
+        applyAudioEnhancements(howl)
+      },
+      onplay: () => {
+        setIsPlaying(true)
+        // Start update interval
+        if (updateIntervalRef.current) clearInterval(updateIntervalRef.current)
+        updateIntervalRef.current = window.setInterval(() => {
+          const seek = howl.seek()
+          if (typeof seek === 'number') {
+            setCurrentTime(seek)
+            // Trigger crossfade near end if enabled
+            if (audioSettings.crossfadeEnabled && !crossfadeInProgressRef.current) {
+              const remaining = howl.duration() - seek
+              if (remaining <= audioSettings.crossfadeDuration && remaining > 0) {
+                crossfadeInProgressRef.current = true
+                const fadeOutDuration = audioSettings.crossfadeDuration * 1000
+                howl.fade(howl.volume(), 0, fadeOutDuration)
+                // Preload and start next track
+                if (nextHowlRef.current) {
+                  applyAudioEnhancements(nextHowlRef.current)
+                  nextHowlRef.current.play()
+                  nextHowlRef.current.fade(0, volume, fadeOutDuration)
+                }
+              }
+            }
+          }
+        }, 100)
+        preloadNextTrack()
+      },
+      onpause: () => {
+        setIsPlaying(false)
+        if (updateIntervalRef.current) {
+          clearInterval(updateIntervalRef.current)
+          updateIntervalRef.current = undefined
+        }
+      },
+      onstop: () => {
+        setIsPlaying(false)
+        if (updateIntervalRef.current) {
+          clearInterval(updateIntervalRef.current)
+          updateIntervalRef.current = undefined
+        }
+      },
+      onend: () => {
+        if (currentMedia) {
+          markAsWatched(currentMedia.id, howl.duration())
+        }
+        crossfadeInProgressRef.current = false
+        // If crossfade handled next track, swap refs
+        if (nextHowlRef.current) {
+          currentHowlRef.current = nextHowlRef.current
+          nextHowlRef.current = null
+        }
+        playNext()
+      },
+    })
+
+    currentHowlRef.current = howl
+
+    // Seek to saved progress
+    if (currentMedia.progress && currentMedia.progress > 0) {
+      howl.seek(currentMedia.progress)
+    }
+
+    // Auto-play
+    howl.play()
 
     return () => {
-      audio.removeEventListener('loadedmetadata', handleLoaded)
-      audio.removeEventListener('timeupdate', handleTime)
-      audio.removeEventListener('ended', handleEnded)
-      audio.removeEventListener('play', handlePlay)
-      audio.removeEventListener('pause', handlePause)
+      if (updateIntervalRef.current) {
+        clearInterval(updateIntervalRef.current)
+        updateIntervalRef.current = undefined
+      }
+      if (currentHowlRef.current) {
+        currentHowlRef.current.unload()
+        currentHowlRef.current = null
+      }
+      if (nextHowlRef.current) {
+        nextHowlRef.current.unload()
+        nextHowlRef.current = null
+      }
     }
-  }, [currentMedia, markAsWatched, playNext, setIsPlaying, spotifyCurrent])
+  }, [currentMedia, sourceUrl, volume, markAsWatched, playNext, setIsPlaying, spotifyCurrent, audioSettings, media, queue, currentIndex])
 
   // Sync with Spotify playback if active
   useEffect(() => {
@@ -115,11 +226,12 @@ export const MusicPlayerBar: React.FC = () => {
     return () => clearInterval(id)
   }, [spotifyCurrent])
 
-  // Keep audio volume in sync
+  // Keep Howler volume in sync
   useEffect(() => {
-    const audio = audioRef.current
-    if (audio) audio.volume = volume
-  }, [volume])
+    if (currentHowlRef.current && !crossfadeInProgressRef.current) {
+      applyAudioEnhancements(currentHowlRef.current)
+    }
+  }, [volume, audioSettings])
 
   // Persist progress when track changes/unmounts
   useEffect(() => {
@@ -131,30 +243,27 @@ export const MusicPlayerBar: React.FC = () => {
   }, [currentMedia, currentTime, markAsWatched])
 
   const handlePlayPause = () => {
-    const audio = audioRef.current
-    if (!audio) return
+    const howl = currentHowlRef.current
+    if (!howl) return
     if (isPlaying) {
-      audio.pause()
-      setIsPlaying(false)
+      howl.pause()
     } else {
-      audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
+      howl.play()
     }
   }
 
   const handleSeek = (value: number) => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.currentTime = value
+    const howl = currentHowlRef.current
+    if (!howl) return
+    howl.seek(value)
     setCurrentTime(value)
   }
 
   const handleVolumeChange = (value: number) => {
     const vol = Math.max(0, Math.min(1, value))
     setVolume(vol)
-    const audio = audioRef.current
-    if (audio) {
-      audio.volume = vol
-      audio.muted = vol === 0
+    if (currentHowlRef.current) {
+      applyAudioEnhancements(currentHowlRef.current)
     }
   }
 
@@ -239,7 +348,6 @@ export const MusicPlayerBar: React.FC = () => {
         </div>
       ) : (
         <div className="flex items-center gap-4">
-          <audio ref={audioRef} className="hidden" />
           <div className="flex items-center gap-3 min-w-[200px]">
             <button
               onClick={handlePlayPause}

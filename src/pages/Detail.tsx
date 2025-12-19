@@ -1,15 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, TagChip } from '@components/index'
+import { DoujinDetailLayout } from '../components/DoujinDetailLayout'
+import { ComicReader } from '../components/ComicReader'
 import { useLibraryStore, useUIStore, useCustomFieldsStore } from '@store/index'
+import { useCollectionsStore } from '../store/collectionsStore'
 import { searchOMDb, getOMDbDetails, getPosterUrl as getOmdbPosterUrl } from '../services/omdb'
 import { extractMediaMetadata } from '../services/metadataExtractor'
 
 export const Detail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const { media, toggleFavorite, markAsWatched, updateMedia, removeMedia } = useLibraryStore()
   const { setCurrentPage } = useUIStore()
   const { fieldDefinitions, addFieldDefinition, getFieldsForMediaType } = useCustomFieldsStore()
+  const { collections, addItemToCollection } = useCollectionsStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -19,7 +24,18 @@ export const Detail: React.FC = () => {
   const item = useMemo(() => media.find((m) => m.id === id), [media, id])
 
   // Edit mode state
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true')
+  
+  // Add to collection modal
+  const [showAddToCollection, setShowAddToCollection] = useState(false)
+  const [selectedCollection, setSelectedCollection] = useState<string>('')
+  
+  // Watch for URL param changes
+  useEffect(() => {
+    if (searchParams.get('addToCollection') === 'true') {
+      setShowAddToCollection(true)
+    }
+  }, [searchParams])
   const [editForm, setEditForm] = useState({
     title: '',
     year: '',
@@ -29,6 +45,7 @@ export const Detail: React.FC = () => {
     genres: '',
     language: '',
     rating: '',
+    myRating: '',
     poster: '',
     filePath: '',
     trailerUrl: '',
@@ -42,6 +59,9 @@ export const Detail: React.FC = () => {
   const [showAddFieldDialog, setShowAddFieldDialog] = useState(false)
   const [newFieldLabel, setNewFieldLabel] = useState('')
   const [newFieldType, setNewFieldType] = useState<'text' | 'number' | 'date' | 'url'>('text')
+  
+  // Comic reader state
+  const [comicReaderOpen, setComicReaderOpen] = useState(false)
   
   const customFields = useMemo(() => {
     return item ? getFieldsForMediaType(item.type) : []
@@ -95,6 +115,7 @@ export const Detail: React.FC = () => {
         genres: (details?.Genre || item.genres.join(', ')),
         language: item.language,
         rating: (details?.imdbRating && details.imdbRating !== 'N/A') ? details.imdbRating : (item.rating?.toString() || ''),
+        myRating: item.myRating?.toString() || '',
         poster: item.poster || getOmdbPosterUrl(details?.Poster) || '',
         filePath: item.filePath || '',
         trailerUrl: item.trailerUrl || '',
@@ -114,6 +135,7 @@ export const Detail: React.FC = () => {
       genres: editForm.genres.split(',').map(g => g.trim()).filter(Boolean),
       language: editForm.language.trim(),
       rating: editForm.rating ? parseFloat(editForm.rating) : undefined,
+      myRating: editForm.myRating ? parseFloat(editForm.myRating) : undefined,
       poster: editForm.poster.trim() || undefined,
       tags: editForm.actors.split(',').map(a => a.trim()).filter(Boolean),
       customFields: customFieldValues,
@@ -189,6 +211,20 @@ export const Detail: React.FC = () => {
   const statusLabel = item.type === 'book' ? 'Status' : 'Status'
   const statusValue = item.type === 'book' ? (item.watched ? 'Finished' : 'Not read') : (item.watched ? '✓ Watched' : 'Not watched')
 
+  // Use custom doujinshi layout
+  if (item.type === 'doujinshi') {
+    return (
+      <main className="pt-20 pb-24 px-0">
+        <div className="bg-dark min-h-screen">
+          <DoujinDetailLayout
+            media={item}
+            onToggleFavorite={() => toggleFavorite(item.id)}
+          />
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="pt-20 pb-24 px-0">
       {/* Hero Section with Backdrop */}
@@ -251,32 +287,98 @@ export const Detail: React.FC = () => {
 
               {/* Rating & Actions */}
               <div className="flex flex-wrap items-start gap-4">
-                {/* Rating (movies/TV only) */}
-                {isVideo && (
+                {/* External Rating (movies/TV only) */}
+                {isVideo && rating10 && (
                 <div className="bg-dark/80 backdrop-blur-sm p-4 rounded-lg border border-yellow-500/30 min-w-[140px]">
                   <div className="flex items-center gap-2 mb-1">
                     <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.788 1.401 8.168L12 18.896l-7.335 3.971 1.401-8.168L.132 9.211l8.2-1.193L12 .587z"/>
                     </svg>
                     <span className="text-2xl font-bold text-light">
-                      {typeof rating10 === 'number' ? rating10.toFixed(1) : 'N/A'}
+                      {rating10.toFixed(1)}
                     </span>
                     <span className="text-gray-500 text-sm">/10</span>
                   </div>
                   <p className="text-xs text-gray-400">IMDb Rating</p>
                 </div>
                 )}
+                
+                {/* My Rating */}
+                {!isEditing ? (
+                  item.myRating ? (
+                    <div className="bg-dark/80 backdrop-blur-sm p-4 rounded-lg border border-primary/30 min-w-[140px]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.788 1.401 8.168L12 18.896l-7.335 3.971 1.401-8.168L.132 9.211l8.2-1.193L12 .587z"/>
+                        </svg>
+                        <span className="text-2xl font-bold text-light">
+                          {item.myRating.toFixed(1)}
+                        </span>
+                        <span className="text-gray-500 text-sm">/10</span>
+                      </div>
+                      <p className="text-xs text-gray-400">Your Rating</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-dark/80 backdrop-blur-sm p-4 rounded-lg border border-gray-600 hover:border-primary min-w-[140px] transition"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        <span className="text-lg font-semibold text-gray-400">Rate</span>
+                      </div>
+                      <p className="text-xs text-gray-400">Add Your Rating</p>
+                    </button>
+                  )
+                ) : (
+                  <div className="bg-dark/80 backdrop-blur-sm p-4 rounded-lg border border-primary min-w-[140px]">
+                    <label className="block text-xs text-gray-400 mb-2">Your Rating (0-10)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={editForm.myRating}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value)
+                        if (value <= 10 || e.target.value === '') {
+                          setEditForm({ ...editForm, myRating: e.target.value })
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value)
+                        if (value > 10) {
+                          setEditForm({ ...editForm, myRating: '10' })
+                        }
+                      }}
+                      className="w-full bg-surface border border-gray-600 rounded px-3 py-2 text-light focus:outline-none focus:border-primary"
+                      placeholder="0.0"
+                    />
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2">
                   {!isEditing ? (
                     <>
-                      <Button variant="primary" size="md" onClick={() => navigate(`/watch/${item.id}`)}>
-                        <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                        {isVideo ? 'Play' : item.type === 'music' ? 'Listen' : 'Open'}
-                      </Button>
+                      {/* Show Read button for books with comic/manga format */}
+                      {item.type === 'book' && (item.bookFormat === 'comic' || item.bookFormat === 'manga') ? (
+                        <Button variant="primary" size="md" onClick={() => setComicReaderOpen(true)}>
+                          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                          Read
+                        </Button>
+                      ) : (
+                        <Button variant="primary" size="md" onClick={() => navigate(`/watch/${item.id}`)}>
+                          <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                          {isVideo ? 'Play' : item.type === 'music' ? 'Listen' : 'Open'}
+                        </Button>
+                      )}
                       <Button
                         variant="secondary"
                         size="md"
@@ -307,6 +409,37 @@ export const Detail: React.FC = () => {
                         </svg>
                         Edit
                       </Button>
+                      {!details && (item.type === 'movie' || item.type === 'tv') && (
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={async () => {
+                            setIsLoadingDetails(true)
+                            try {
+                              const omdbType = item.type === 'tv' ? 'series' : 'movie'
+                              const results = await searchOMDb(item.title, omdbType)
+                              if (results[0]?.imdbID) {
+                                const full = await getOMDbDetails(results[0].imdbID)
+                                setDetails(full)
+                                // Auto-populate trailer for TV shows
+                                if (item.type === 'tv' && !item.trailerUrl) {
+                                  updateMedia(item.id, {
+                                    trailerUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title + ' trailer')}`
+                                  })
+                                }
+                              }
+                            } finally {
+                              setIsLoadingDetails(false)
+                            }
+                          }}
+                          disabled={isLoadingDetails}
+                        >
+                          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          {isLoadingDetails ? 'Fetching...' : 'Fetch Metadata'}
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="md"
@@ -325,6 +458,52 @@ export const Detail: React.FC = () => {
                     </>
                   ) : (
                     <>
+                      {/* Fetch Metadata in Edit Mode */}
+                      {(item.type === 'movie' || item.type === 'tv') && (
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={async () => {
+                            setIsLoadingDetails(true)
+                            try {
+                              const omdbType = item.type === 'tv' ? 'series' : 'movie'
+                              const results = await searchOMDb(editForm.title || item.title, omdbType)
+                              if (results[0]?.imdbID) {
+                                const full = await getOMDbDetails(results[0].imdbID)
+                                if (full) {
+                                  setDetails(full)
+                                  // Auto-populate form fields
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    description: full.Plot || prev.description,
+                                    genres: full.Genre || prev.genres,
+                                    director: full.Director || prev.director,
+                                    actors: full.Actors || prev.actors,
+                                    year: full.Year || prev.year,
+                                    poster: full.Poster || prev.poster,
+                                    rating: full.imdbRating || prev.rating,
+                                  }))
+                                  // Auto-populate trailer for TV shows
+                                  if (item.type === 'tv' && !editForm.trailerUrl) {
+                                    setEditForm(prev => ({
+                                      ...prev,
+                                      trailerUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(editForm.title || item.title + ' trailer')}`
+                                    }))
+                                  }
+                                }
+                              }
+                            } finally {
+                              setIsLoadingDetails(false)
+                            }
+                          }}
+                          disabled={isLoadingDetails}
+                        >
+                          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          {isLoadingDetails ? 'Fetching...' : 'Fetch Metadata'}
+                        </Button>
+                      )}
                       <Button variant="primary" size="md" onClick={handleSaveEdit}>
                         <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -366,39 +545,57 @@ export const Detail: React.FC = () => {
                 )}
               </div>
 
-              {/* Trailer / Preview */}
-              {(item.trailerUrl || item.previewUrl) && !isEditing && (
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                    {isVideo ? 'Trailer' : item.type === 'music' ? 'Music Video' : 'Preview'}
-                  </h2>
+
+
+              {/* Trailer/Preview Section */}
+              {(item.trailerUrl || item.previewUrl) && (
+                <div className="border-t border-dark pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+                      {item.type === 'book' ? 'Preview' : item.type === 'music' ? 'Music Video' : 'Trailer'}
+                    </h2>
+                    {item.trailerUrl && (
+                      <a
+                        href={item.trailerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Open in YouTube ↗
+                      </a>
+                    )}
+                  </div>
+                  
+                  {/* YouTube Embed */}
                   {item.trailerUrl && item.trailerUrl.includes('youtube.com') && (
                     <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                       <iframe
-                        className="absolute top-0 left-0 w-full h-full rounded-lg"
-                        src={item.trailerUrl.replace('watch?v=', 'embed/')}
+                        className="absolute top-0 left-0 w-full h-full rounded-none border border-gray-700"
+                        src={item.trailerUrl.replace('watch?v=', 'embed/').split('&')[0]}
                         title="Trailer"
+                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
                     </div>
                   )}
-                  {item.previewUrl && (
-                    <a
-                      href={item.previewUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary hover:bg-highlight text-dark font-medium rounded"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View Preview
-                    </a>
+                  
+                  {/* Google Books Preview */}
+                  {item.type === 'book' && item.previewUrl && (
+                    <div className="relative w-full" style={{ minHeight: '400px' }}>
+                      <iframe
+                        className="w-full h-full rounded-none border border-gray-700"
+                        src={item.previewUrl}
+                        title="Book Preview"
+                        style={{ minHeight: '400px' }}
+                        frameBorder="0"
+                      />
+                    </div>
                   )}
                 </div>
               )}
+
+
 
               {/* Details Grid */}
               <div className="border-t border-dark pt-6 space-y-4">
@@ -557,13 +754,39 @@ export const Detail: React.FC = () => {
                       <label className="block text-xs text-gray-400 mb-1">
                         {isVideo ? 'Trailer URL (YouTube)' : item.type === 'music' ? 'Music Video URL (YouTube)' : 'Preview URL'}
                       </label>
-                      <input
-                        type="url"
-                        value={editForm.trailerUrl}
-                        onChange={(e) => setEditForm({ ...editForm, trailerUrl: e.target.value })}
-                        className="w-full bg-dark border border-gray-600 rounded px-3 py-2 text-sm text-light focus:outline-none focus:border-primary"
-                        placeholder="https://youtube.com/watch?v=..."
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={editForm.trailerUrl}
+                          onChange={(e) => setEditForm({ ...editForm, trailerUrl: e.target.value })}
+                          className="flex-1 bg-dark border border-gray-600 rounded px-3 py-2 text-sm text-light focus:outline-none focus:border-primary"
+                          placeholder="https://youtube.com/watch?v=..."
+                        />
+                        {(item.type === 'movie' || item.type === 'tv') && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const { searchTMDB, getMovieTrailer, getShowTrailer } = await import('../services/tmdb')
+                                const results = await searchTMDB(item.title, item.type === 'tv' ? 'tv' : 'movie')
+                                if (results && results[0]) {
+                                  const trailer = item.type === 'tv' 
+                                    ? await getShowTrailer(results[0].id)
+                                    : await getMovieTrailer(results[0].id)
+                                  if (trailer) {
+                                    setEditForm({ ...editForm, trailerUrl: trailer })
+                                  }
+                                }
+                              } catch (e) {
+                                console.error('Failed to fetch trailer:', e)
+                              }
+                            }}
+                            className="px-4 py-2 bg-primary hover:bg-highlight text-dark font-medium text-sm rounded whitespace-nowrap"
+                          >
+                            Auto-Fetch
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs text-gray-400 mb-1">
@@ -697,6 +920,71 @@ export const Detail: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Comic Reader */}
+      {comicReaderOpen && (
+        <ComicReader
+          media={item}
+          onClose={() => setComicReaderOpen(false)}
+        />
+      )}
+      
+      {/* Add to Collection Modal */}
+      {showAddToCollection && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setShowAddToCollection(false)}
+        >
+          <div 
+            className="bg-surface rounded-none p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold text-light mb-4">Add to Collection</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Select Collection</label>
+                <select
+                  value={selectedCollection}
+                  onChange={(e) => setSelectedCollection(e.target.value)}
+                  className="w-full bg-dark text-light px-3 py-2 rounded-none focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Choose a collection...</option>
+                  {collections.filter((c) => c.type !== 'smart').map((col) => (
+                    <option key={col.id} value={col.id}>{col.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setShowAddToCollection(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    if (selectedCollection && id) {
+                      addItemToCollection(selectedCollection, id)
+                      setShowAddToCollection(false)
+                      setSelectedCollection('')
+                    }
+                  }}
+                  disabled={!selectedCollection}
+                  className="flex-1"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

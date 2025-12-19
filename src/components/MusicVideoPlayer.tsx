@@ -117,7 +117,7 @@ export const MusicVideoPlayer: React.FC = () => {
   }
 
   return (
-    <div className="bg-dark border border-surface p-4 space-y-3">
+    <div className="bg-dark border border-surface p-4 space-y-3 max-w-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-light font-semibold">
           <Film size={18} className="text-highlight" />
@@ -189,16 +189,32 @@ export const MusicVideoPlayer: React.FC = () => {
           const item = media.find((m) => m.id === id)
           if (!item) return null
           const active = idx === currentIndex
+          const { remove } = useMusicVideoPlaylistStore.getState()
           return (
-            <button
+            <div
               key={id}
-              onClick={() => setIndex(idx)}
-              className={`w-full text-left px-3 py-2 flex items-center gap-2 ${active ? 'bg-surface text-light' : 'text-gray-300 hover:bg-surface/70'}`}
+              className={`w-full flex items-center gap-2 px-3 py-2 ${active ? 'bg-surface text-light' : 'text-gray-300 hover:bg-surface/70'}`}
             >
-              <span className="text-xs text-gray-500 w-8">{idx + 1}</span>
-              <span className="text-sm truncate">{item.title}</span>
-              <span className="text-xs text-gray-500 truncate">{item.genres[0] ?? 'Music'}</span>
-            </button>
+              <button
+                onClick={() => setIndex(idx)}
+                className="flex-1 text-left flex items-center gap-2"
+              >
+                <span className="text-xs text-gray-500 w-8">{idx + 1}</span>
+                <span className="text-sm truncate">{item.title}</span>
+                <span className="text-xs text-gray-500 truncate">{item.genres[0] ?? 'Music'}</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  remove(id)
+                }}
+                className="p-1 text-gray-500 hover:text-red-400 transition"
+                aria-label="Remove"
+                title="Remove from playlist"
+              >
+                <X size={14} />
+              </button>
+            </div>
           )
         })}
         {queue.length === 0 && <p className="text-xs text-gray-400">No playlist yet.</p>}

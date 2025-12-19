@@ -1,13 +1,17 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, Search, Bell, Settings, User, ArrowLeft } from 'lucide-react'
+import { Menu, Search, Bell, Settings, User, ArrowLeft, BookOpen } from 'lucide-react'
 import { useUIStore } from '@store/index'
+import { useNotificationsStore } from '@/store/notificationsStore'
+import { NotificationsCenter } from './NotificationsCenter'
 
 export const HeaderBar: React.FC = () => {
   const { toggleSidebar } = useUIStore()
   const navigate = useNavigate()
   const location = useLocation()
   const canGoBack = location.pathname !== '/'
+  const [showNotifications, setShowNotifications] = useState(false)
+  const unreadCount = useNotificationsStore((state) => state.getUnreadCount())
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-dark border-b border-surface h-16 z-40">
@@ -29,8 +33,17 @@ export const HeaderBar: React.FC = () => {
           >
             <Menu size={24} className="text-light" />
           </button>
-          <Link to="/" className="text-highlight font-bold text-lg tracking-wider">
-            REEL READER
+          <Link to="/" className="flex items-center gap-2 group">
+            <BookOpen 
+              size={28} 
+              className="text-primary group-hover:text-highlight transition-colors" 
+            />
+            <span 
+              className="text-2xl font-bold bg-gradient-to-r from-primary via-highlight to-accent bg-clip-text text-transparent hover:scale-105 transition-transform"
+              style={{ fontFamily: "'Pacifico', cursive" }}
+            >
+              Reel Reader
+            </span>
           </Link>
         </div>
 
@@ -51,9 +64,17 @@ export const HeaderBar: React.FC = () => {
           <button className="p-2 hover:bg-surface rounded-none transition md:hidden">
             <Search size={20} className="text-light" />
           </button>
-          <button className="p-2 hover:bg-surface rounded-none transition relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="p-2 hover:bg-surface rounded-none transition relative"
+            aria-label="Notifications"
+          >
             <Bell size={20} className="text-light" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-highlight rounded-full" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-primary text-dark text-xs font-bold rounded-full flex items-center justify-center px-1">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
           <Link
             to="/settings"
@@ -61,6 +82,12 @@ export const HeaderBar: React.FC = () => {
           >
             <Settings size={20} className="text-light" />
           </Link>
+
+      {/* Notifications Center */}
+      <NotificationsCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
           <Link
             to="/account"
             className="p-2 hover:bg-surface rounded-none transition"

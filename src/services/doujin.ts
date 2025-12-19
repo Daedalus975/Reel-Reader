@@ -9,10 +9,18 @@ const NHENTAI_BASE: string = (import.meta.env.VITE_NHENTAI_BASE as string) || 'h
 export interface ImportedDoujin {
   id: string
   title: string
+  titleJapanese?: string
   cover?: string
   tags: string[]
   artists: string[]
+  parodies?: string[]
+  characters?: string[]
+  groups?: string[]
   languages: string[]
+  categories?: string[]
+  pages?: number
+  favorites?: number
+  uploadDate?: Date
   year?: number
   description?: string
   source: 'nhentai' | 'hitomi'
@@ -50,23 +58,52 @@ export async function importFromNhentai(url: string): Promise<ImportedDoujin | n
   const data = await fetchNhentaiApi(id)
   if (data) {
     const title = data.title?.english || data.title?.pretty || data.title?.japanese || `nhentai ${id}`
-    const cover = data.images?.cover
-      ? `https://t.nhentai.net/galleries/${data.media_id}/${data.images.cover.t || 'cover'}.jpg`
-      : undefined
-    const tags: string[] = (data.tags || []).map((t: any) => t.name)
-    const artists = (data.tags || []).filter((t: any) => t.type === 'artist').map((t: any) => t.name)
-    const languages = (data.tags || []).filter((t: any) => t.type === 'language').map((t: any) => t.name.toUpperCase())
+    const titleJapanese = data.title?.japanese
+    
+    // Get cover image - nhentai uses first page as cover
+    let cover: string | undefined
+    if (data.images?.cover) {
+      const ext = data.images.cover.t === 'p' ? 'png' : data.images.cover.t === 'g' ? 'gif' : 'jpg'
+      cover = `https://t.nhentai.net/galleries/${data.media_id}/cover.${ext}`
+    } else if (data.images?.pages?.[0] && data.media_id) {
+      const ext = data.images.pages[0].t === 'p' ? 'png' : data.images.pages[0].t === 'g' ? 'gif' : 'jpg'
+      cover = `https://t.nhentai.net/galleries/${data.media_id}/1.${ext}`
+    }
+    
+    const allTags = data.tags || []
+    const tags: string[] = allTags.filter((t: any) => t.type === 'tag').map((t: any) => t.name)
+    const artists = allTags.filter((t: any) => t.type === 'artist').map((t: any) => t.name)
+    const parodies = allTags.filter((t: any) => t.type === 'parody').map((t: any) => t.name)
+    const characters = allTags.filter((t: any) => t.type === 'character').map((t: any) => t.name)
+    const groups = allTags.filter((t: any) => t.type === 'group').map((t: any) => t.name)
+    const languages = allTags.filter((t: any) => t.type === 'language').map((t: any) => t.name)
+    const categories = allTags.filter((t: any) => t.type === 'category').map((t: any) => t.name)
     const uploadDate = data.upload_date ? new Date(data.upload_date * 1000) : undefined
+    const pages = data.num_pages
+    const favorites = data.num_favorites
+
+    // Store media_id and page extensions for reader
+    const pageExtensions = data.images?.pages?.map((p: any) => 
+      p.t === 'p' ? 'png' : p.t === 'g' ? 'gif' : 'jpg'
+    ) || []
 
     return {
       id,
       title,
+      titleJapanese,
       cover,
       tags,
       artists,
+      parodies,
+      characters,
+      groups,
       languages,
+      categories,
+      pages,
+      favorites,
+      uploadDate,
       year: uploadDate?.getFullYear(),
-      description: `nhentai #${id}`,
+      description: `nhentai #${id} • media_id: ${data.media_id} • exts: ${pageExtensions.join(',')}`,
       source: 'nhentai',
     }
   }

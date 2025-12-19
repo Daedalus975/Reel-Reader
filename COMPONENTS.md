@@ -133,3 +133,19 @@ Avoid:
 - Group related UI into logical sections
 - Ensure text has sufficient contrast (WCAG AA)
 - Test responsive behavior on tablet/mobile
+
+## 📎 Feature Mapping (200-Feature Catalog)
+
+- MediaCard: Library organization (sorting/filtering/views), tags/ratings display — supports future tag CRUD and saved views.
+- PlayerControls/MusicPlayerBar/MiniPlayer/FoldoutPlayer: Playback core (start/pause/seek), mini player, queue controls — aligns with global hotkeys and loop/repeat.
+- TagChip: Library organization (apply/remove tags) — aligns with color tags and filters.
+- Import UI (AddContentModal, Import page): Sources/scanning/import — aligns with manual scan and incremental scanning.
+- BookReader: Books/comics/audiobooks — aligns with open EPUB/PDF, future themes and progress.
+- DeviceSelector: Playback device management — future casting integrations (DLNA/Chromecast).
+- **VideoPlayer**: In-app video playback with controls, keyboard shortcuts, PiP, speed control — implements Issue #11.
+- **AudioSettingsPanel**: Music enhancements (crossfade, gapless, ReplayGain, EQ, sleep timer) — implements Issue #12.
+- **LyricsPanel**: Real-time lyrics display with LRCLIB integration — implements Issue #12.
+- **AudioVisualizer**: 4 visualization modes (bars/waveform/circular/particles) — implements Issue #12.
+- **PlaylistManager**: M3U playlist import/export and library matching — implements Issue #12.
+
+See [OPTIONAL_FEATURES.md](OPTIONAL_FEATURES.md) for the full functions-aligned checklist and status per area.

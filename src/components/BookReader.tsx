@@ -1,5 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { convertFileSrc } from '@tauri-apps/api/tauri'
+import { isDesktop } from '@/utils/runtime'
+let _convertFileSrc: ((s: string) => string) | null = null
+async function getConvertFileSrc(): Promise<(s: string) => string> {
+  if (_convertFileSrc) return _convertFileSrc
+  if (!isDesktop()) {
+    const fallback = (s: string) => s
+    _convertFileSrc = fallback
+    return fallback
+  }
+  try {
+    const mod = await import('@tauri-apps/api/tauri')
+    _convertFileSrc = mod.convertFileSrc
+    return _convertFileSrc
+  } catch (err) {
+    _convertFileSrc = (s: string) => s
+    return _convertFileSrc
+  }
+}
 import { SkipBack, SkipForward, Loader2, BookOpenCheck } from 'lucide-react'
 
 interface BookReaderProps {
@@ -13,15 +30,6 @@ function getExt(path?: string) {
   if (!path) return ''
   const parts = path.split('.')
   return parts.length > 1 ? parts.pop()!.toLowerCase() : ''
-}
-
-function toSrc(path?: string): string | undefined {
-  if (!path) return undefined
-  try {
-    return convertFileSrc(path)
-  } catch {
-    return path
-  }
 }
 
 export const BookReader: React.FC<BookReaderProps> = ({ filePath, previewUrl, initialProgress = 0, onProgress }) => {
@@ -38,7 +46,11 @@ export const BookReader: React.FC<BookReaderProps> = ({ filePath, previewUrl, in
 
   useEffect(() => {
     if (filePath) {
-      setSafeSrc(toSrc(filePath))
+      // Attempt to convert file path to a tauri-safe src if available
+      (async () => {
+        const conv = await getConvertFileSrc()
+        setSafeSrc(conv(filePath))
+      })()
     } else if (previewUrl) {
       setSafeSrc(previewUrl)
     } else {

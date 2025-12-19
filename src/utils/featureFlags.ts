@@ -12,6 +12,13 @@ export type FeatureKey =
   | 'feature_global_hotkeys'
   | 'feature_lyrics_visualizer'
   | 'feature_cloud_sync'
+  | 'feature_video_player'
+  | 'feature_music_player_enhancements'
+  | 'feature_notifications_jobs'
+  | 'feature_watch_party'
+  | 'feature_chromecast'
+  | 'feature_ai_automation'
+  | 'feature_plugin_system'
   // add others here as needed
 
 const STORAGE_KEY = 'reel_reader_feature_flags'

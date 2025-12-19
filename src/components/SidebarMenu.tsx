@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Film, Music, BookOpen, Clapperboard, Radio, Home, Settings, Users, Search, Upload, User, ShieldAlert } from 'lucide-react'
+import { Film, Music, BookOpen, Clapperboard, Radio, Home, Settings, Users, Search, User, ShieldAlert, Folder, Download, Share2, Cloud, Plug, Sliders } from 'lucide-react'
 import { useUIStore } from '@store/index'
 import { useProfileStore } from '@store/profileStore'
 
@@ -15,7 +15,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', icon: <Home size={20} />, path: '/' },
   { label: 'Search', icon: <Search size={20} />, path: '/search' },
-  { label: 'Import', icon: <Upload size={20} />, path: '/import' },
+  { label: 'Collections', icon: <Folder size={20} />, path: '/collections' },
+  { label: 'Downloads', icon: <Download size={20} />, path: '/downloads' },
 ]
 
 const MEDIA_NAV: NavItem[] = [
@@ -32,6 +33,10 @@ const ADULT_NAV_SPLIT: NavItem[] = [
 ]
 
 const BOTTOM_NAV: NavItem[] = [
+  { label: 'Social', icon: <Share2 size={20} />, path: '/social' },
+  { label: 'Cloud Sync', icon: <Cloud size={20} />, path: '/cloud-sync' },
+  { label: 'Plugins', icon: <Plug size={20} />, path: '/plugins' },
+  { label: 'Customize Media', icon: <Sliders size={20} />, path: '/customize' },
   { label: 'Profiles', icon: <User size={20} />, path: '/profile' },
   { label: 'Account', icon: <Users size={20} />, path: '/account' },
   { label: 'Settings', icon: <Settings size={20} />, path: '/settings' },

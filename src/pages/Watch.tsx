@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { PlayerControls, Button } from '@components/index'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { VideoPlayer, Button } from '@components/index'
 import { useLibraryStore, useUIStore } from '@store/index'
 
 function toFileUrl(path?: string) {
@@ -17,15 +17,12 @@ function isYouTube(url?: string) {
 }
 
 export const Watch: React.FC = () => {
-  const { id } = useParams<{ id: string }> ()
-  const { media, markAsWatched, toggleFavorite } = useLibraryStore()
+  const { id } = useParams<{ id: string }>()
+  const { media, markAsWatched, toggleFavorite, updateMedia } = useLibraryStore()
   const { setCurrentPage } = useUIStore()
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const navigate = useNavigate()
 
-  const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(0.8)
 
   useEffect(() => {
     setCurrentPage(`/watch/${id ?? ''}`)
@@ -42,79 +39,43 @@ export const Watch: React.FC = () => {
 
   const youtubeTrailer = useMemo(() => (item?.trailerUrl && isYouTube(item.trailerUrl) ? item.trailerUrl : undefined), [item])
 
-  // Attach media events
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-
-    const handleLoaded = () => {
-      setDuration(video.duration || 0)
-      if (item?.progress) {
-        video.currentTime = item.progress
-        setCurrentTime(item.progress)
-      }
-    }
-    const handleTime = () => setCurrentTime(video.currentTime)
-    const handleEnded = () => {
-      if (item) {
-        markAsWatched(item.id, video.duration || video.currentTime || 0)
-      }
-      setIsPlaying(false)
-    }
-    const handlePlay = () => setIsPlaying(true)
-    const handlePause = () => setIsPlaying(false)
-
-    video.volume = volume
-    video.addEventListener('loadedmetadata', handleLoaded)
-    video.addEventListener('timeupdate', handleTime)
-    video.addEventListener('ended', handleEnded)
-    video.addEventListener('play', handlePlay)
-    video.addEventListener('pause', handlePause)
-
-    return () => {
-      video.removeEventListener('loadedmetadata', handleLoaded)
-      video.removeEventListener('timeupdate', handleTime)
-      video.removeEventListener('ended', handleEnded)
-      video.removeEventListener('play', handlePlay)
-      video.removeEventListener('pause', handlePause)
-    }
-  }, [item, markAsWatched, volume])
-
   // Persist progress on unmount
   useEffect(() => {
     return () => {
       if (item && currentTime > 0) {
-        markAsWatched(item.id, currentTime)
+        updateMedia(item.id, { progress: currentTime })
       }
     }
-  }, [item, currentTime, markAsWatched])
+  }, [item, currentTime, updateMedia])
 
-  const handlePlayPause = () => {
-    const video = videoRef.current
-    if (!video) return
-    if (isPlaying) {
-      video.pause()
-      setIsPlaying(false)
-    } else {
-      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
-    }
-  }
-
-  const handleSeek = (time: number) => {
-    const video = videoRef.current
-    if (!video) return
-    video.currentTime = time
+  const handleTimeUpdate = (time: number) => {
     setCurrentTime(time)
   }
 
-  const handleVolume = (v: number) => {
-    const video = videoRef.current
-    setVolume(v)
-    if (video) {
-      video.volume = v
-      video.muted = v === 0
+  const handleEnded = () => {
+    if (item) {
+      markAsWatched(item.id, currentTime)
     }
   }
+
+  const handlePlay = () => {}
+  const handlePause = () => {}
+  // Find next episode for TV shows
+  const nextEpisode = useMemo(() => {
+    if (!item || item.type !== 'tv') return null
+    // Simple logic: find next item in library with same title prefix
+    const current = media.find((m) => m.id === id)
+    if (!current) return null
+    const titleBase = current.title.split('-')[0].trim()
+    const next = media.find(
+      (m) =>
+        m.type === 'tv' &&
+        m.id !== id &&
+        m.title.startsWith(titleBase) &&
+        (m.year === current.year || !m.year)
+    )
+    return next || null
+  }, [item, media, id])
 
   if (!item) {
     return (
@@ -131,16 +92,18 @@ export const Watch: React.FC = () => {
   const hasPlayableVideo = !!sourceUrl
 
   return (
-    <main className="pt-20 pb-24 px-0 md:px-0 bg-black text-light min-h-screen">
+    <main className="pt-16 pb-0 px-0 bg-black text-light min-h-screen">
       <div className="w-full bg-black">
         {hasPlayableVideo ? (
-          <video
-            ref={videoRef}
+          <VideoPlayer
             src={sourceUrl}
-            className="w-full aspect-video bg-black"
-            controls={false}
-            onClick={handlePlayPause}
-            preload="metadata"
+            poster={item.poster}
+            currentTime={item.progress || 0}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleEnded}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            className="w-full"
           />
         ) : youtubeTrailer ? (
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
@@ -163,32 +126,44 @@ export const Watch: React.FC = () => {
         )}
       </div>
 
-      <div className="p-4 md:p-6 space-y-2 bg-dark border-t border-surface">
-        <h1 className="text-2xl font-bold">{item.title}</h1>
-        <p className="text-gray-400 text-sm">{item.year ?? 'Year N/A'} • {item.language} • {item.type.toUpperCase()}</p>
-        <div className="flex gap-2 mt-2">
-          {hasPlayableVideo && (
-            <Button variant="primary" size="sm" onClick={handlePlayPause}>{isPlaying ? 'Pause' : 'Play'}</Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={() => markAsWatched(item.id, currentTime)}>Mark as Watched</Button>
-          <Button variant="secondary" size="sm" onClick={() => toggleFavorite(item.id)}>
-            {item.isFavorite ? 'Unfavorite' : 'Favorite'}
+      <div className="p-4 md:p-6 space-y-3 bg-dark border-t border-surface">
+        <div>
+          <h1 className="text-2xl font-bold">{item.title}</h1>
+          <p className="text-gray-400 text-sm">
+            {item.year ?? 'Year N/A'} • {item.language} • {item.type.toUpperCase()}
+            {item.watched && <span className="ml-2 text-green-400">✓ Watched</span>}
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => markAsWatched(item.id, currentTime)}>
+            {item.watched ? 'Mark Unwatched' : 'Mark as Watched'}
           </Button>
-          <Link to={`/detail/${item.id}`} className="text-sm text-primary underline self-center">Details</Link>
+          <Button variant="secondary" size="sm" onClick={() => toggleFavorite(item.id)}>
+            {item.isFavorite ? '★ Favorited' : '☆ Favorite'}
+          </Button>
+          <Link to={`/detail/${item.id}`}>
+            <Button variant="secondary" size="sm">Details</Button>
+          </Link>
+          {nextEpisode && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate(`/watch/${nextEpisode.id}`)}
+            >
+              Next Episode →
+            </Button>
+          )}
+        </div>
+        
+        {item.description && (
+          <p className="text-sm text-gray-300 mt-2 max-w-4xl">{item.description}</p>
+        )}
+        
+        <div className="text-xs text-gray-500 mt-2">
+          <p>Keyboard shortcuts: Space (play/pause) • ← → (seek) • F (fullscreen) • M (mute)</p>
         </div>
       </div>
-
-      {hasPlayableVideo && (
-        <PlayerControls
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          onPlayPause={handlePlayPause}
-          onSeek={handleSeek}
-          volume={volume}
-          onVolumeChange={handleVolume}
-        />
-      )}
     </main>
   )
 }

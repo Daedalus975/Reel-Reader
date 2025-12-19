@@ -6,6 +6,13 @@
 
 // @ts-ignore
 const FANZA_API_ID: string | undefined = import.meta.env.VITE_FANZA_API_ID
+// @ts-ignore
+const CORS_PROXY: string | undefined = import.meta.env.VITE_CORS_PROXY
+
+function withProxy(url: string): string {
+  if (!CORS_PROXY) return url
+  return CORS_PROXY.includes('?') ? `${CORS_PROXY}${encodeURIComponent(url)}` : `${CORS_PROXY}${url}`
+}
 
 export interface FanzaItem {
   content_id: string
@@ -55,11 +62,13 @@ export async function searchJAV(query: string): Promise<FanzaItem[]> {
     const endpoint = `https://api.dmm.com/affiliate/v3/ItemList?api_id=${FANZA_API_ID}&affiliate_id=${FANZA_API_ID}&site=FANZA&service=digital&floor=videoa&hits=20&sort=date&keyword=${encodeURIComponent(
       query,
     )}`
-    const res = await fetch(endpoint)
+    const res = await fetch(withProxy(endpoint))
     const data: FanzaResponse = await res.json()
     return data.result?.items || []
   } catch (err) {
     console.error('FANZA search error', err)
-    return []
+    // Fallback to mock on error
+    const q = query.toLowerCase()
+    return MOCK_JAV.filter((i) => i.title.toLowerCase().includes(q))
   }
 }

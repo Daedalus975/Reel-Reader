@@ -28,9 +28,12 @@ export const FoldoutPlayer: React.FC = () => {
   useEffect(() => {
     const handleMouseLeave = () => {
       if (playerOpen) {
-        hoverTimeout.current = setTimeout(() => setPlayerOpen(false), 300)
+        hoverTimeout.current = setTimeout(() => {
+          setPlayerOpen(false)
+        }, 300)
       }
     }
+
     const handleMouseEnter = () => {
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
@@ -49,7 +52,9 @@ export const FoldoutPlayer: React.FC = () => {
         node.removeEventListener('mouseenter', handleMouseEnter)
         node.removeEventListener('mouseleave', handleMouseLeave)
       }
-      if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+      }
     }
   }, [playerOpen, setPlayerOpen])
 
@@ -58,12 +63,20 @@ export const FoldoutPlayer: React.FC = () => {
     setPlayerOpen(true)
   }
 
+  const handleEdgeLeave = () => {
+    if (hoverTimeout.current) {
+      clearTimeout(hoverTimeout.current)
+      hoverTimeout.current = null
+    }
+  }
+
   return (
     <>
       {/* Right-edge hover trigger */}
       <div
         className="fixed right-0 top-16 bottom-0 w-8 z-30 hidden md:block hover:bg-primary/10 transition-colors"
         onMouseEnter={handleEdgeEnter}
+        onMouseLeave={handleEdgeLeave}
         title="Hover to open player"
       />
 

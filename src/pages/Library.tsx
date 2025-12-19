@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MediaCard } from '@components/index'
+import { Plus } from 'lucide-react'
+import { MediaCard, AddMediaModal } from '@components/index'
 import { useLibraryStore, useUIStore } from '@store/index'
 import type { MediaType } from '../types'
 
@@ -19,6 +20,7 @@ export const Library: React.FC = () => {
   const [selectedType, setSelectedType] = useState<MediaType | 'all'>('all')
   const [selectedGenre, setSelectedGenre] = useState<string>('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
 
   // Filter out adult content - always exclude it from general library
   const nonAdultMedia = useMemo(() => {
@@ -54,6 +56,16 @@ export const Library: React.FC = () => {
           <h1 className="text-4xl font-bold text-light mb-2">My Library</h1>
           <p className="text-gray-400 text-sm">{displayMedia.length} items</p>
         </div>
+        
+        {selectedType !== 'all' && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-none hover:bg-primary/90 transition font-medium"
+          >
+            <Plus size={20} />
+            Add {selectedType === 'movie' ? 'Movie' : selectedType === 'tv' ? 'TV Show' : selectedType === 'book' ? 'Book' : selectedType === 'music' ? 'Music' : selectedType === 'podcast' ? 'Podcast' : 'Media'}
+          </button>
+        )}
       </div>
 
       {/* Filter Controls */}
@@ -140,7 +152,24 @@ export const Library: React.FC = () => {
       {displayMedia.length === 0 && (
         <div className="text-center py-20">
           <p className="text-gray-400 text-lg">No media found matching your filters</p>
+          {selectedType !== 'all' && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="mt-6 inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-none hover:bg-primary/90 transition font-medium"
+            >
+              <Plus size={20} />
+              Add Your First {selectedType === 'movie' ? 'Movie' : selectedType === 'tv' ? 'TV Show' : selectedType === 'book' ? 'Book' : selectedType === 'music' ? 'Album' : 'Item'}
+            </button>
+          )}
         </div>
+      )}
+      
+      {showAddModal && selectedType !== 'all' && (
+        <AddMediaModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          mediaType={selectedType as MediaType}
+        />
       )}
     </main>
   )

@@ -15,6 +15,10 @@ interface UIStore extends UIState {
   togglePlayer: () => void
   setPlayerOpen: (open: boolean) => void
   setPlayerEdgeOpenEnabled: (enabled: boolean) => void
+
+  // Debug mode
+  debugMode: boolean
+  setDebugMode: (enabled: boolean) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -27,6 +31,7 @@ export const useUIStore = create<UIStore>((set) => ({
   mediaCardSize: 'md',
   playerOpen: false,
   playerEdgeOpenEnabled: true,
+  debugMode: false,
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -41,4 +46,7 @@ export const useUIStore = create<UIStore>((set) => ({
   togglePlayer: () => set((state) => ({ playerOpen: !state.playerOpen })),
   setPlayerOpen: (open) => set({ playerOpen: open }),
   setPlayerEdgeOpenEnabled: (enabled) => set({ playerEdgeOpenEnabled: enabled }),
+
+  // Debug mode
+  setDebugMode: (enabled) => set({ debugMode: enabled }),
 }))

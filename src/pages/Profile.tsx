@@ -1,28 +1,78 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useProfileStore } from '../store/profileStore'
 import { useProfileMediaStore } from '../store/profileMediaStore'
 import { Button } from '../components/Button'
+import { ProfilePinModal } from '../components/ProfilePinModal'
 import { COLORS } from '../styles/tokens'
 
 export function Profile() {
-  const { profiles, currentProfileId, createProfile, switchProfile, deleteProfile } = useProfileStore()
+  const navigate = useNavigate()
+  const { profiles, currentProfileId, createProfile, switchProfile, deleteProfile, verifyPin, setProfilePin } = useProfileStore()
   const { initializeProfileMedia } = useProfileMediaStore()
   const [newProfileName, setNewProfileName] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [adultOnly, setAdultOnly] = useState(false)
+  const [newProfilePassword, setNewProfilePassword] = useState('')
+  const [usePassword, setUsePassword] = useState(false)
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
 
   const handleCreateProfile = () => {
     if (newProfileName.trim()) {
       const newProfile = createProfile(newProfileName.trim(), undefined, adultOnly)
+      if (usePassword && newProfilePassword.trim()) {
+        setProfilePin(newProfile.id, newProfilePassword.trim())
+      }
       initializeProfileMedia(newProfile.id)
+      // Auto-navigate to appropriate home based on profile type
+      if (adultOnly) {
+        navigate('/adult/movies')
+      } else {
+        navigate('/')
+      }
       setNewProfileName('')
+      setNewProfilePassword('')
+      setUsePassword(false)
       setAdultOnly(false)
       setShowCreateForm(false)
     }
   }
 
-  const handleSwitchProfile = (profileId: string) => {
+  const handleSwitchProfile = async (profileId: string) => {
+    const profile = profiles.find((p) => p.id === profileId)
+    if (!profile) return
+
+    // Check if profile has a PIN
+    if (profile.pinHash) {
+      setSelectedProfileId(profileId)
+      setShowPinModal(true)
+      return
+    }
+
+    // No PIN required, switch immediately
     switchProfile(profileId)
+    // Auto-navigate based on profile type
+    if (profile.adultContentEnabled) {
+      navigate('/adult/movies')
+    } else {
+      navigate('/')
+    }
+  }
+
+  const handlePinVerified = (profileId: string) => {
+    const profile = profiles.find((p) => p.id === profileId)
+    if (!profile) return
+
+    switchProfile(profileId)
+    setShowPinModal(false)
+    setSelectedProfileId(null)
+    // Auto-navigate based on profile type
+    if (profile.adultContentEnabled) {
+      navigate('/adult/movies')
+    } else {
+      navigate('/')
+    }
   }
 
   const handleDeleteProfile = (profileId: string) => {
@@ -44,8 +94,16 @@ export function Profile() {
               <p className="text-2xl font-bold">{profiles.find((p) => p.id === currentProfileId)?.name}</p>
               <p className="text-sm opacity-60">ID: {currentProfileId}</p>
             </div>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: `rgba(22, 89, 182, 0.4)` }}>
-              <span className="text-xl font-bold">👤</span>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-surface/40" style={{ backgroundColor: `rgba(22, 89, 182, 0.4)` }}>
+              {profiles.find((p) => p.id === currentProfileId)?.avatar ? (
+                profiles.find((p) => p.id === currentProfileId)?.avatar?.startsWith('data:') || profiles.find((p) => p.id === currentProfileId)?.avatar?.startsWith('http') ? (
+                  <img src={profiles.find((p) => p.id === currentProfileId)?.avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold">{profiles.find((p) => p.id === currentProfileId)?.avatar}</span>
+                )
+              ) : (
+                <span className="text-xl font-bold">👤</span>
+              )}
             </div>
           </div>
         </div>
@@ -65,8 +123,16 @@ export function Profile() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(22, 89, 182, 0.4)' }}>
-                      <span className="text-lg">👤</span>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 border-surface/40" style={{ backgroundColor: 'rgba(22, 89, 182, 0.4)' }}>
+                      {profile.avatar ? (
+                        profile.avatar.startsWith('data:') || profile.avatar.startsWith('http') ? (
+                          <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-lg">{profile.avatar}</span>
+                        )
+                      ) : (
+                        <span className="text-lg">👤</span>
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold">{profile.name}</p>
@@ -123,31 +189,58 @@ export function Profile() {
                   }
                 }}
               />
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 text-sm opacity-80">
-                  <input
-                    type="checkbox"
-                    checked={adultOnly}
-                    onChange={(e) => setAdultOnly(e.target.checked)}
-                  />
-                  Adult content profile
-                </label>
+              <label className="flex items-center gap-2 text-sm opacity-80">
+                <input
+                  type="checkbox"
+                  checked={adultOnly}
+                  onChange={(e) => setAdultOnly(e.target.checked)}
+                />
+                Adult content profile
+              </label>
+              
+              <label className="flex items-center gap-2 text-sm opacity-80">
+                <input
+                  type="checkbox"
+                  checked={usePassword}
+                  onChange={(e) => setUsePassword(e.target.checked)}
+                />
+                Require password/PIN
+              </label>
+              
+              {usePassword && (
+                <input
+                  type="text"
+                  value={newProfilePassword}
+                  onChange={(e) => setNewProfilePassword(e.target.value)}
+                  placeholder="Enter password/PIN (letters and numbers)"
+                  className="w-full px-4 py-2 rounded-lg text-light placeholder-opacity-40 focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'rgba(36, 22, 76, 0.3)',
+                    borderColor: 'rgba(36, 22, 76, 0.4)',
+                    borderWidth: '1px',
+                  }}
+                />
+              )}
+              
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateForm(false)
+                    setNewProfileName('')
+                    setNewProfilePassword('')
+                    setUsePassword(false)
+                    setAdultOnly(false)
+                  }}
+                >
+                  Cancel
+                </Button>
                 <Button
                   variant="primary"
                   onClick={handleCreateProfile}
                   disabled={!newProfileName.trim()}
                 >
                   Create Profile
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setNewProfileName('')
-                    setAdultOnly(false)
-                  }}
-                >
-                  Cancel
                 </Button>
               </div>
             </div>
@@ -166,6 +259,20 @@ export function Profile() {
           <p>💡 Each profile has its own library, favorites, and watch history. Switch profiles anytime to see different media collections.</p>
         </div>
       </div>
+      
+      {/* PIN Modal */}
+      {showPinModal && selectedProfileId && (
+        <ProfilePinModal
+          isOpen={showPinModal}
+          onClose={() => {
+            setShowPinModal(false)
+            setSelectedProfileId(null)
+          }}
+          onSuccess={() => handlePinVerified(selectedProfileId)}
+          profileId={selectedProfileId}
+          mode="verify"
+        />
+      )}
     </div>
   )
 }

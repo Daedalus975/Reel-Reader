@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { MediaTypePage } from './MediaTypePage'
-import { MusicVideoPlaylistBuilder, MusicVideoPlayer, MusicDetailModal } from '@components/index'
+import { MusicVideoPlaylistBuilder, MusicVideoPlayer, MusicDetailModal, AudioSettingsPanel, LyricsPanel, PlaylistManager } from '@components/index'
 import { SpotifySearch } from '@components/SpotifySearch'
 import { useMusicPlayerStore } from '@store/musicPlayerStore'
 import { useLibraryStore } from '@store/libraryStore'
@@ -10,7 +10,7 @@ import { isSpotifyConnected } from '@/services/spotify'
 import { searchYouTubeVideo } from '@/services/youtube'
 import type { Media } from '../types'
 import type { SpotifyTrack } from '@/services/spotifyFeatures'
-import { ChevronDown, ChevronUp, Music2, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat } from 'lucide-react'
+import { ChevronDown, ChevronUp, Music2, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Settings, FileText, List } from 'lucide-react'
 import DeviceSelector from '@components/DeviceSelector'
 
 export const Music: React.FC = () => {
@@ -23,6 +23,9 @@ export const Music: React.FC = () => {
   const [showDetail, setShowDetail] = useState(false)
   const [showSpotifySearch, setShowSpotifySearch] = useState(false)
   const [showSpotifyPlaylists, setShowSpotifyPlaylists] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showLyrics, setShowLyrics] = useState(false)
+  const [showPlaylistManager, setShowPlaylistManager] = useState(false)
   
   // Spotify store
   const spotifyPlaylists = useSpotifyStore((s) => s.playlists)
@@ -135,6 +138,15 @@ export const Music: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button onClick={() => setShowPlaylistManager(true)} className="p-2 bg-surface rounded-none hover:bg-dark" title="Playlist Manager">
+                    <List size={16} />
+                  </button>
+                  <button onClick={() => setShowLyrics(true)} className="p-2 bg-surface rounded-none hover:bg-dark" title="Show Lyrics">
+                    <FileText size={16} />
+                  </button>
+                  <button onClick={() => setShowSettings(true)} className="p-2 bg-surface rounded-none hover:bg-dark" title="Audio Settings">
+                    <Settings size={16} />
+                  </button>
                   <DeviceSelector />
                   <button onClick={() => useSpotifyPlaybackStore.getState().setShuffle(true)} className="p-2 bg-surface rounded-none" title="Shuffle">
                     <Shuffle size={16} />
@@ -273,6 +285,30 @@ export const Music: React.FC = () => {
           onPlay={handlePlayFromDetail}
         />
       )}
+
+      {/* Audio Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <AudioSettingsPanel onClose={() => setShowSettings(false)} />
+        </div>
+      )}
+      {/* Lyrics Panel */}
+      <LyricsPanel
+        isOpen={showLyrics}
+        onClose={() => setShowLyrics(false)}
+        artist={currentTrack?.artist || selectedMusic?.description || ''}
+        title={currentTrack?.name || selectedMusic?.title || ''}
+        filePath={selectedMusic?.filePath}
+        duration={(currentTrack?.duration || 0) / 1000}
+        currentTime={(currentTrack?.progress || 0) / 1000}
+      />
+
+      {/* Playlist Manager */}
+      <PlaylistManager
+        isOpen={showPlaylistManager}
+        onClose={() => setShowPlaylistManager(false)}
+        currentPlaylist={musicItems}
+      />
     </>
   )
 }

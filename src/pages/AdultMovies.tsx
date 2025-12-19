@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MediaCard, Button, AddContentModal } from '@components/index'
+import { MediaCard, Button, AddMediaModal } from '@components/index'
 import { useLibraryStore, useUIStore } from '@store/index'
-import { Plus } from 'lucide-react'
+import { Plus, Settings as SettingsIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export const AdultMovies: React.FC = () => {
   const { media } = useLibraryStore()
@@ -47,10 +48,24 @@ export const AdultMovies: React.FC = () => {
           <h1 className="text-4xl font-bold text-light mb-2">Adult Movies</h1>
           <p className="text-gray-400 text-sm">{javMedia.length} movies</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus size={18} className="inline mr-2" />
-          Add Adult Movie
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus size={18} className="inline mr-2" />
+            Add Manually
+          </Button>
+        </div>
+      </div>
+
+      {/* Library Settings Link */}
+      <div className="mb-6">
+        <Link
+          to="/library-settings/jav"
+          className="inline-flex items-center gap-2 text-gray-300 hover:text-primary transition-colors text-sm"
+        >
+          <SettingsIcon size={16} />
+          <span>Library Settings</span>
+          <span className="text-xs">→</span>
+        </Link>
       </div>
 
       <div className="bg-surface/50 rounded-lg p-6 mb-8">
@@ -104,7 +119,7 @@ export const AdultMovies: React.FC = () => {
         </div>
       )}
 
-      <AddContentModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} mediaType={'jav'} isAdult={true} />
+      <AddMediaModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} mediaType={'jav'} />
     </main>
   )
 }

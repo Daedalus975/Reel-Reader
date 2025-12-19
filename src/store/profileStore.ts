@@ -11,6 +11,8 @@ interface ProfileStore {
   deleteProfile: (profileId: string) => void
   updateProfile: (profileId: string, updates: Partial<Profile>) => void
   getCurrentProfile: () => Profile | undefined
+  verifyPin: (profileId: string, pin: string) => Promise<boolean>
+  setProfilePin: (profileId: string, pin: string) => void
 }
 
 const DEFAULT_PROFILE: Profile = {
@@ -75,6 +77,24 @@ export const useProfileStore = create<ProfileStore>()(
       getCurrentProfile: () => {
         const state = get()
         return state.profiles.find((p) => p.id === state.currentProfileId)
+      },
+
+      verifyPin: async (profileId, pin) => {
+        const profile = get().profiles.find((p) => p.id === profileId)
+        if (!profile || !profile.pinHash) return true // No PIN set
+        
+        // Simple hash comparison (in production, use proper crypto)
+        const hash = btoa(pin)
+        return hash === profile.pinHash
+      },
+
+      setProfilePin: (profileId, pin) => {
+        const hash = btoa(pin) // Simple hash (use bcrypt in production)
+        get().updateProfile(profileId, { pinHash: hash })
+      },
+
+      removeProfilePin: (profileId) => {
+        get().updateProfile(profileId, { pinHash: undefined })
       },
     }),
     {

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 interface TagChipProps {
   label: string
@@ -15,8 +15,19 @@ export const TagChip: React.FC<TagChipProps> = ({
   removable,
   onRemove,
 }) => {
-  const bgColor = color || '#E1D50D'
-  const textColor = color ? '#FDF9F3' : '#08080A'
+  // Get custom tag colors from localStorage
+  const customColors = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('reel-reader-tag-colors')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  }, [])
+
+  // Use custom color if defined for this tag, otherwise use provided color or default
+  const bgColor = customColors[label] || color || '#E1D50D'
+  const textColor = customColors[label] || color ? '#FDF9F3' : '#08080A'
 
   return (
     <span

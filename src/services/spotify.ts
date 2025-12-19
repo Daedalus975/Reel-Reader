@@ -46,7 +46,10 @@ function getRedirectUri(): string {
   // Use the configured env redirect URI if available, otherwise use current origin
   // This ensures consistency with what's registered in Spotify dashboard
   if (ENV_REDIRECT) return ENV_REDIRECT
-  return `${window.location.origin}/auth/spotify/callback`
+  
+  // Normalize localhost/127.0.0.1 - prefer localhost for consistency
+  const origin = window.location.origin.replace('127.0.0.1', 'localhost')
+  return `${origin}/auth/spotify/callback`
 }
 
 export async function startSpotifyAuth(): Promise<void> {
